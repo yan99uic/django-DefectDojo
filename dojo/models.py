@@ -366,6 +366,29 @@ class IPScan(models.Model):
     services = models.CharField(max_length=800, null=True)
     scan = models.ForeignKey(Scan, default=1, editable=False)
 
+class Tool_Configuration(models.Model):
+    name = models.CharField(max_length=200, null=False)
+    description = models.CharField(max_length=2000, null=True, blank=True)
+    url =  models.URLField(max_length=2000, null=True)
+    result_type = models.CharField(max_length=200, null=False,default='ZAP Scan')
+    authentication_type = models.CharField(max_length=15,
+                            choices=(
+                                ('API', 'API Key'),
+                                ('Password', 'Username/Password'),
+                                ('SSH', 'SSH')),
+                            null=True, blank=True)
+    username = models.CharField(max_length=200, null=True, blank=True)
+    password = models.CharField(max_length=600, null=True, blank=True)
+    auth_title = models.CharField(max_length=200, null=True, blank=True, verbose_name="Title for SSH/API Key")
+    ssh = models.CharField(max_length=6000, null=True, blank=True)
+    api_key = models.CharField(max_length=600, null=True, blank=True, verbose_name="API Key")
+
+    class Meta:
+        ordering = ['name']
+
+    def __unicode__(self):
+        return self.name
+
 
 class Engagement_Type(models.Model):
     name = models.CharField(max_length=200)
@@ -555,6 +578,7 @@ class Test(models.Model):
     engagement = models.ForeignKey(Engagement, editable=False)
     lead = models.ForeignKey(User, editable=True, null=True)
     test_type = models.ForeignKey(Test_Type)
+    test_tool = models.ForeignKey(Tool_Configuration, null=False, related_name='tool_configuration')
     target_start = models.DateTimeField()
     target_end = models.DateTimeField()
     estimated_time = models.TimeField(null=True, blank=True, editable=False)
@@ -1049,56 +1073,6 @@ class Notifications(models.Model):
     other = MultiSelectField(choices=NOTIFICATION_CHOICES, default='alert', blank=True)
     user = models.ForeignKey(User, default=None, null=True, editable=False)
 
-class Tool_Type(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.CharField(max_length=2000, null=True)
-
-    class Meta:
-        ordering = ['name']
-
-    def __unicode__(self):
-        return self.name
-
-class Tool_Configuration(models.Model):
-    name = models.CharField(max_length=200, null=False)
-    description = models.CharField(max_length=2000, null=True, blank=True)
-    url =  models.URLField(max_length=2000, null=True)
-    tool_type = models.ForeignKey(Tool_Type, related_name='tool_type')
-    authentication_type = models.CharField(max_length=15,
-                            choices=(
-                                ('API', 'API Key'),
-                                ('Password', 'Username/Password'),
-                                ('SSH', 'SSH')),
-                            null=True, blank=True)
-    username = models.CharField(max_length=200, null=True, blank=True)
-    password = models.CharField(max_length=600, null=True, blank=True)
-    auth_title = models.CharField(max_length=200, null=True, blank=True, verbose_name="Title for SSH/API Key")
-    ssh = models.CharField(max_length=6000, null=True, blank=True)
-    api_key = models.CharField(max_length=600, null=True, blank=True, verbose_name="API Key")
-
-    class Meta:
-        ordering = ['name']
-
-    def __unicode__(self):
-        return self.name
-
-class Tool_Product_Settings(models.Model):
-    name = models.CharField(max_length=200, null=False)
-    description = models.CharField(max_length=2000, null=True, blank=True)
-    url =  models.URLField(max_length=2000, null=True, blank=True)
-    product = models.ForeignKey(Product, default=1, editable=False)
-    tool_configuration = models.ForeignKey(Tool_Configuration, null=False, related_name='tool_configuration')
-    tool_project_id = models.CharField(max_length=200, null=True, blank=True)
-    notes = models.ManyToManyField(Notes, blank=True, editable=False)
-
-    class Meta:
-        ordering = ['name']
-
-class Tool_Product_History(models.Model):
-    product = models.ForeignKey(Tool_Product_Settings, editable=False)
-    last_scan = models.DateTimeField(null=False, editable=False, default=now)
-    succesfull = models.BooleanField(default=True, verbose_name="Succesfully")
-    configuration_details = models.CharField(max_length=2000, null=True, blank=True)
 
 class Alerts(models.Model):
     title = models.CharField(max_length=100, default='', null=False)
@@ -1175,6 +1149,7 @@ tag_register(Engagement)
 tag_register(Endpoint)
 tag_register(Finding_Template)
 
+admin.site.register(Tool_Configuration)
 admin.site.register(Test)
 admin.site.register(Finding)
 admin.site.register(FindingImage)
@@ -1196,9 +1171,6 @@ admin.site.register(ScanSettings)
 admin.site.register(IPScan)
 admin.site.register(Alerts)
 admin.site.register(JIRA_Issue)
-admin.site.register(Tool_Configuration)
-admin.site.register(Tool_Product_Settings)
-admin.site.register(Tool_Type)
 admin.site.register(Cred_User)
 admin.site.register(Cred_Mapping)
 admin.site.register(System_Settings)

@@ -19,7 +19,7 @@ from dojo import settings
 from dojo.models import Finding, Product_Type, Product, ScanSettings, VA, \
     Check_List, User, Engagement, Test, Test_Type, Notes, Risk_Acceptance, \
     Development_Environment, Dojo_User, Scan, Endpoint, Stub_Finding, Finding_Template, Report, FindingImage, \
-    JIRA_Issue, JIRA_PKey, JIRA_Conf, UserContactInfo, Tool_Type, Tool_Configuration, Tool_Product_Settings, \
+    JIRA_Issue, JIRA_PKey, JIRA_Conf, UserContactInfo, Tool_Configuration,  \
     Cred_User, Cred_Mapping, System_Settings, Notifications
 from dojo.utils import get_system_setting
 
@@ -545,13 +545,14 @@ class DeleteEngagementForm(forms.ModelForm):
 
 class TestForm(forms.ModelForm):
     test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
+    test_tool = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all().order_by('name'))
     environment = forms.ModelChoiceField(
         queryset=Development_Environment.objects.all().order_by('name'))
     # credential = forms.ModelChoiceField(Cred_User.objects.all(), required=False)
     target_start = forms.DateTimeField(widget=forms.TextInput(
         attrs={'class': 'datepicker'}))
     target_end = forms.DateTimeField(widget=forms.TextInput(
-        attrs={'class': 'datepicker'}))
+        attrs={'class': 'datepicker'}),required=False)
     tags = forms.CharField(widget=forms.SelectMultiple(choices=[]),
                            required=False,
                            help_text="Add tags that help describe this test.  "
@@ -568,7 +569,7 @@ class TestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        fields = ['test_type', 'target_start', 'target_end', 'environment', 'percent_complete', 'tags', 'lead']
+        fields = ['test_type', 'test_tool', 'target_start', 'target_end', 'environment', 'percent_complete', 'tags', 'lead']
 
 
 class DeleteTestForm(forms.ModelForm):
@@ -578,6 +579,7 @@ class DeleteTestForm(forms.ModelForm):
     class Meta:
         model = Test
         exclude = ('test_type',
+                   'test_tool',
                    'environment',
                    'target_start',
                    'target_end',
@@ -1281,38 +1283,13 @@ class JIRAForm(forms.ModelForm):
         exclude = ['product']
 
 
-class ToolTypeForm(forms.ModelForm):
-    class Meta:
-        model = Tool_Type
-        exclude = ['product']
-
-
 class ToolConfigForm(forms.ModelForm):
-    tool_type = forms.ModelChoiceField(queryset=Tool_Type.objects.all(), label='Tool Type')
+    result_type = forms.ChoiceField(required=True, choices=ImportScanForm.SCAN_TYPE_CHOICES, label='Result Type')
     ssh = forms.CharField(widget=forms.Textarea(attrs={}), required=False, label='SSH Key')
 
     class Meta:
         model = Tool_Configuration
         exclude = ['product']
-
-
-class DeleteToolProductSettingsForm(forms.ModelForm):
-    id = forms.IntegerField(required=True,
-                            widget=forms.widgets.HiddenInput())
-
-    class Meta:
-        model = Tool_Product_Settings
-        exclude = ['tool_type']
-
-
-class ToolProductSettingsForm(forms.ModelForm):
-    tool_configuration = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all(), label='Tool Configuration')
-
-    class Meta:
-        model = Tool_Product_Settings
-        fields = ['name', 'description', 'url', 'tool_configuration', 'tool_project_id']
-        exclude = ['tool_type']
-        order = ['name']
 
 
 class CredMappingForm(forms.ModelForm):

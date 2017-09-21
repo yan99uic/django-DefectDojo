@@ -25,9 +25,7 @@ from dojo.test.urls import urlpatterns as test_urls
 from dojo.test_type.urls import urlpatterns as test_type_urls
 from dojo.user.urls import urlpatterns as user_urls
 from dojo.jira_link.urls import urlpatterns as jira_urls
-from dojo.tool_type.urls import urlpatterns as tool_type_urls
 from dojo.tool_config.urls import urlpatterns as tool_config_urls
-from dojo.tool_product.urls import urlpatterns as tool_product_urls
 from dojo.cred.urls import urlpatterns as cred_urls
 from dojo.system_settings.urls import urlpatterns as system_settings_urls
 from dojo.notifications.urls import urlpatterns as notifications_urls
@@ -69,9 +67,7 @@ ur += test_type_urls
 ur += test_urls
 ur += user_urls
 ur += jira_urls
-ur += tool_type_urls
 ur += tool_config_urls
-ur += tool_product_urls
 ur += cred_urls
 ur += system_settings_urls
 ur += notifications_urls
