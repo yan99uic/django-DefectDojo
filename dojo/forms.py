@@ -544,7 +544,6 @@ class DeleteEngagementForm(forms.ModelForm):
 
 
 class TestForm(forms.ModelForm):
-    test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
     test_tool = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all().order_by('name'))
     environment = forms.ModelChoiceField(
         queryset=Development_Environment.objects.all().order_by('name'))
@@ -569,7 +568,7 @@ class TestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        fields = ['test_type', 'test_tool', 'target_start', 'target_end', 'environment', 'percent_complete', 'tags', 'lead']
+        fields = ['test_tool', 'target_start', 'target_end', 'environment', 'percent_complete', 'tags', 'lead']
 
 
 class DeleteTestForm(forms.ModelForm):
@@ -578,8 +577,7 @@ class DeleteTestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        exclude = ('test_type',
-                   'test_tool',
+        exclude = ('test_tool',
                    'environment',
                    'target_start',
                    'target_end',
@@ -1289,7 +1287,7 @@ class ToolConfigForm(forms.ModelForm):
 
     class Meta:
         model = Tool_Configuration
-        exclude = ['product']
+        exclude = ['']
 
 
 class CredMappingForm(forms.ModelForm):

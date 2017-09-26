@@ -232,7 +232,7 @@
                                 </ul>
                                 <!-- /.nav-second-level -->
                             </li>
-                            {% if request.user.is_staff %}
+                            {% if request.user.is_superuser %}
                                 <li>
                                     <a href="{% url 'users' %}"><i class="fa fa-user fa-fw"></i> <span>Users</span></a>
                                 </li>
@@ -243,6 +243,7 @@
                                         <span>Calendar</span></a>
                                 </li>
                             {% endif %}
+                            {% if request.user.is_staff %}
                                 <li>
                                     <a href="{% url 'jira' %}"><i class="fa fa-cog fa-fw"></i>
                                         <span>Configuration</span></a>
@@ -258,6 +259,7 @@
                                         <li><a href="{% url 'tool_config' %}">Tool Configuration </a></li>
                                     </ul>
                                 </li>
+                            {% endif %}
 
                         {% endblock %}
 

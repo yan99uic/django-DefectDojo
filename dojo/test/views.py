@@ -57,7 +57,7 @@ def view_test(request, tid):
             test.notes.add(new_note)
             form = NoteForm()
             url = request.build_absolute_uri(reverse("view_test", args=(test.id,)))
-            title="Test: %s on %s" % (test.test_type.name, test.engagement.product.name)
+            title="Test: %s on %s" % (test.test_tool.test_type.name, test.engagement.product.name)
             process_notifications(request, new_note, url, title)
             messages.add_message(request,
                                  messages.SUCCESS,
@@ -68,7 +68,7 @@ def view_test(request, tid):
 
     fpage = get_page_items(request, findings, 25)
     sfpage = get_page_items(request, stub_findings, 25)
-    show_re_upload = any(test.test_type.name in code for code in ImportScanForm.SCAN_TYPE_CHOICES)
+    show_re_upload = any(test.test_tool.test_type.name in code for code in ImportScanForm.SCAN_TYPE_CHOICES)
 
     add_breadcrumb(parent=test, top_level=False, request=request)
     return render(request, 'dojo/view_test.html',
@@ -189,15 +189,15 @@ def test_ics(request, tid):
     uid = "dojo_test_%d_%d_%d" % (test.id, test.engagement.id, test.engagement.product.id)
     cal = get_cal_event(start_date,
                         end_date,
-                        "Test: %s (%s)" % (test.test_type.name, test.engagement.product.name),
+                        "Test: %s (%s)" % (test.test_tool.test_type.name, test.engagement.product.name),
                         "Set aside for test %s, on product %s.  Additional detail can be found at %s" % (
-                            test.test_type.name, test.engagement.product.name,
+                            test.test_tool.test_type.name, test.engagement.product.name,
                             request.build_absolute_uri((reverse("view_test", args=(test.id,))))),
                         uid)
     output = cal.serialize()
     response = HttpResponse(content=output)
     response['Content-Type'] = 'text/calendar'
-    response['Content-Disposition'] = 'attachment; filename=%s.ics' % test.test_type.name
+    response['Content-Disposition'] = 'attachment; filename=%s.ics' % test.test_tool.test_type.name
     return response
 
 
@@ -440,7 +440,7 @@ def re_import_scan_results(request, tid):
                          "mitigated.  The process attempts to identify the differences, however manual verification " \
                          "is highly recommended."
     t = get_object_or_404(Test, id=tid)
-    scan_type = t.test_type.name
+    scan_type = t.test_tool.test_type.name
     engagement = t.engagement
     form = ReImportScanForm()
 
@@ -451,7 +451,7 @@ def re_import_scan_results(request, tid):
             scan_date = form.cleaned_data['scan_date']
             min_sev = form.cleaned_data['minimum_severity']
             file = request.FILES['file']
-            scan_type = t.test_type.name
+            scan_type = t.test_tool.test_type.name
             active = form.cleaned_data['active']
             verified = form.cleaned_data['verified']
             tags = request.POST.getlist('tags')

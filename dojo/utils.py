@@ -1093,6 +1093,8 @@ def _unpad_string(value):
     return value
 
 def dojo_crypto_encrypt(plaintext):
+    if plaintext is None:
+        return None
     key = None
     key = get_db_key()
 
