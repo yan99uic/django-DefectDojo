@@ -94,3 +94,5 @@ dojo/media
 .venv/
 venv/
 ENV/
+\#*
+.\#*

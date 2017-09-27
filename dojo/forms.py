@@ -550,8 +550,7 @@ class TestForm(forms.ModelForm):
     # credential = forms.ModelChoiceField(Cred_User.objects.all(), required=False)
     target_start = forms.DateTimeField(widget=forms.TextInput(
         attrs={'class': 'datepicker'}))
-    target_end = forms.DateTimeField(widget=forms.TextInput(
-        attrs={'class': 'datepicker'}),required=False)
+    target_end = forms.DateTimeField(widget=forms.TextInput(                                                   attrs={'class': 'datepicker'}))      
     tags = forms.CharField(widget=forms.SelectMultiple(choices=[]),
                            required=False,
                            help_text="Add tags that help describe this test.  "
@@ -568,7 +567,7 @@ class TestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        fields = ['test_tool', 'target_start', 'target_end', 'environment', 'percent_complete', 'tags', 'lead']
+        fields = ['test_tool', 'target_start', 'target_end', 'environment', 'tags', 'lead']
 
 
 class DeleteTestForm(forms.ModelForm):

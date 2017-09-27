@@ -27,11 +27,6 @@
                         <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu1">
-                        <li role="presentation">
-                            <a href="{% url 'edit_test' test.id %}">
-                                <i class="fa fa-pencil-square-o"></i> Edit Test
-                            </a>
-                        </li>
                         {% if show_re_upload %}
                             <li role="presentation">
                                 <a href="{% url 're_import_scan_results' test.id %}">

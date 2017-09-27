@@ -580,11 +580,11 @@ class Test(models.Model):
     lead = models.ForeignKey(User, editable=True, null=True)
     test_tool = models.ForeignKey(Tool_Configuration, null=False, related_name='tool_configuration')
     target_start = models.DateTimeField()
-    target_end = models.DateTimeField(null=True, blank=True)
+    target_end = models.DateTimeField(default=datetime.now())
     estimated_time = models.TimeField(null=True, blank=True, editable=False)
     actual_time = models.TimeField(null=True, blank=True, editable=False, )
     percent_complete = models.IntegerField(null=True, blank=True,
-                                           editable=True)
+                                           editable=False)
     notes = models.ManyToManyField(Notes, blank=True,
                                    editable=False)
     environment = models.ForeignKey(Development_Environment, null=True,

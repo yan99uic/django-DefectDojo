@@ -347,7 +347,7 @@
                             <tbody>
                             {% for test in tests %}
                                 <tr>
-                                    <td>{{ test.test_type }}
+                                    <td>{{ test.test_tool.test_type }}
                                       {% if test.tags %}
                                           <sup>
                                               {% for tag in test.tags %}
@@ -366,8 +366,6 @@
                                         <div class="btn-group">
                                             <a class="btn btn-sm btn-primary"
                                                href="{% url 'view_test' test.id %}">View</a>
-                                            <a class="btn btn-sm btn-warning"
-                                               href="{% url 'edit_test' test.id %}">Edit</a>
                                             <a class="btn btn-sm btn-danger"
                                                href="{% url 'delete_test' test.id %}">Delete</a>
                                         </div>

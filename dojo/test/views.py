@@ -14,6 +14,8 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, Ht
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.cache import cache_page
 from pytz import timezone
+import json
+from django.forms.models import model_to_dict
 
 from dojo.filters import TemplateFindingFilter
 from dojo.forms import NoteForm, TestForm, FindingForm, \
@@ -24,7 +26,7 @@ from dojo.models import Finding, Test, Notes, \
 from dojo.tools.factory import import_parser_factory
 from dojo.utils import get_page_items, add_breadcrumb, get_cal_event, message, \
                        process_notifications, get_system_setting, create_notification
-from dojo.tasks import add_issue_task
+from dojo.tasks import add_issue_task, async_poke_test
 
 localtz = timezone(get_system_setting('time_zone'))
 
@@ -100,6 +102,8 @@ def edit_test(request, tid):
                                  messages.SUCCESS,
                                  'Test saved.',
                                  extra_tags='alert-success')
+            async_poke_test.delay(new_test.id)
+            return HttpResponseRedirect(reverse('view_engagement', args=(test.engagement.id,)))
 
     form.initial['target_start'] = test.target_start.date()
     form.initial['target_end'] = test.target_end.date()

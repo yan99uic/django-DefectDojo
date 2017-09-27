@@ -28,6 +28,7 @@ localtz = timezone(get_system_setting('time_zone'))
 
 @app.task(bind=True)
 def add_alerts(self, runinterval):
+    print "adding alert ..."
     now = tz.now()
 
     upcoming_engagements = Engagement.objects.filter(target_start__gt=now+timedelta(days=3),target_start__lt=now+timedelta(days=3)+runinterval).order_by('target_start')
@@ -247,3 +248,10 @@ def async_false_history(new_finding, *args, **kwargs):
             new_finding.false_p = True
             super(Finding, new_finding).save(*args, **kwargs)
 
+@app.task(name='async_poke_test')
+def async_poke_test(test_id, *args, **kwargs):
+    test = Test.objects.get(id=test_id)
+    test.percent_complete = 80
+    test.save()
+    print "poking test ", test, "..."
+    
