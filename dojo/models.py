@@ -369,7 +369,6 @@ class IPScan(models.Model):
 class Tool_Configuration(models.Model):
     name = models.CharField(max_length=200, null=False)
     description = models.CharField(max_length=2000, null=True, blank=True)
-    test_type = models.ForeignKey(Test_Type, null=True)
     result_type = models.CharField(max_length=200, null=False, default='ZAP Scan')
     url =  models.URLField(max_length=2000, null=True)
     authentication_type = models.CharField(max_length=15,
@@ -578,7 +577,8 @@ class Development_Environment(models.Model):
 class Test(models.Model):
     engagement = models.ForeignKey(Engagement, editable=False)
     lead = models.ForeignKey(User, editable=True, null=True)
-    test_tool = models.ForeignKey(Tool_Configuration, null=False, related_name='tool_configuration')
+    test_type = models.ForeignKey(Test_Type)
+    test_tool = models.ForeignKey(Tool_Configuration, null=True, blank=True, related_name='tool_configuration')
     target_start = models.DateTimeField()
     target_end = models.DateTimeField(default=datetime.now())
     estimated_time = models.TimeField(null=True, blank=True, editable=False)
@@ -591,7 +591,7 @@ class Test(models.Model):
                                     blank=False)
 
     def __unicode__(self):
-        return "%s (%s)" % (self.test_tool.test_type,
+        return "%s (%s)" % (self.test_type,
                             self.target_start.strftime("%b %d, %Y"))
 
     def get_breadcrumbs(self):

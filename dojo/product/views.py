@@ -232,10 +232,10 @@ def view_product(request, pid):
 
     test_data = {}
     for t in tests:
-        if t.test_tool.test_type.name in test_data:
-            test_data[t.test_tool.test_type.name] += t.verified_finding_count()
+        if t.test_type.name in test_data:
+            test_data[t.test_type.name] += t.verified_finding_count()
         else:
-            test_data[t.test_tool.test_type.name] = t.verified_finding_count()
+            test_data[t.test_type.name] = t.verified_finding_count()
 
     return render(request,
                   'dojo/view_product.html',
