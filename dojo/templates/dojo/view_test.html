@@ -69,7 +69,8 @@
             <table class="table-striped table table-condensed table-hover centered">
                 <tr>
                     <th>Environment</th>
-                    <th>Engagement</th>
+                    <th>Test Type</th>
+                    <th>Test Tool</th>
                     <th>Target Start Date</th>
                     <th>Target End Date</th>
                     {% if test.percent_complete > 0 %}
@@ -85,7 +86,8 @@
                             <b><i>Unknown</i></b>
                         {% endif %}
                     </td>
-                    <td><a href="{% url 'view_engagement' test.engagement.id %}">{{ test.engagement }}</a></td>
+                    <td>{{ test.test_type }}</td>
+                    <td>{{ test.test_tool }}</td>
                     <td>{{ test.target_start.date }}</td>
                     <td>{{ test.target_end.date }}</td>
                     {% if test.percent_complete > 0 %}

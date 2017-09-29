@@ -576,15 +576,14 @@ class Development_Environment(models.Model):
 
 class Test(models.Model):
     engagement = models.ForeignKey(Engagement, editable=False)
-    lead = models.ForeignKey(User, editable=True, null=True)
+    lead = models.ForeignKey(User)
     test_type = models.ForeignKey(Test_Type)
     test_tool = models.ForeignKey(Tool_Configuration, null=True, blank=True, related_name='tool_configuration')
-    target_start = models.DateTimeField()
-    target_end = models.DateTimeField(default=datetime.now())
+    target_start = models.DateTimeField(null=True, blank=True, editable=False)
+    target_end = models.DateTimeField(null=True, blank=True, editable=False)
     estimated_time = models.TimeField(null=True, blank=True, editable=False)
-    actual_time = models.TimeField(null=True, blank=True, editable=False, )
-    percent_complete = models.IntegerField(null=True, blank=True,
-                                           editable=False)
+    actual_time = models.TimeField(null=True, blank=True, editable=False)
+    percent_complete = models.IntegerField(null=True, blank=True, editable=False)
     notes = models.ManyToManyField(Notes, blank=True,
                                    editable=False)
     environment = models.ForeignKey(Development_Environment, null=True,
@@ -592,7 +591,7 @@ class Test(models.Model):
 
     def __unicode__(self):
         return "%s (%s)" % (self.test_type,
-                            self.target_start.strftime("%b %d, %Y"))
+                            self.target_start.strftime("%b %d, %Y") if self.target_start else "")
 
     def get_breadcrumbs(self):
         bc = self.engagement.get_breadcrumbs()

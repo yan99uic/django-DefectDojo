@@ -15,12 +15,15 @@ from celery.utils.log import get_task_logger
 from celery.decorators import task
 from dojo.models import Finding, Test, Engagement
 from pytz import timezone
+from django.forms.models import model_to_dict
 
 import pdfkit
 from dojo.celery import app
 from dojo.reports.widgets import report_widget_factory
 from dojo.utils import add_comment, add_epic, add_issue, update_epic, update_issue, \
                         close_epic, get_system_setting, create_notification
+from dojo.tintri.zap.buildbot import do_zap_scan
+from dojo.tintri.zap.parser import parse_zap_result
 
 logger = get_task_logger(__name__)
 
@@ -248,10 +251,37 @@ def async_false_history(new_finding, *args, **kwargs):
             new_finding.false_p = True
             super(Finding, new_finding).save(*args, **kwargs)
 
-@app.task(name='async_poke_test')
-def async_poke_test(test_id, *args, **kwargs):
-    test = Test.objects.get(id=test_id)
-    test.percent_complete = 80
+
+def mark_start_test(test):
+    test.target_start = datetime.now(tz=localtz)
+    test.percent_complete = 1
     test.save()
-    print "poking test ", test, "..."
-    
+
+def mark_end_test(test):
+    test.target_end = datetime.now(tz=localtz)
+    test.percent_complete = 100
+    test.save()
+
+@app.task(name='async_schedule_test')
+def async_schedule_test(test_id, *args, **kwargs):
+    test = Test.objects.get(id=test_id)
+    if test.test_tool is None:
+        return
+    if test.test_tool.result_type == 'ZAP Scan':
+        sites = []
+        for t in test.tags:
+            sites.append(t.name)
+        if not sites:
+            print "warning: no sites is provided, no auto scan is triggered"
+            return
+        mark_start_test(test)
+        items = parse_zap_result(do_zap_scan(test.test_tool.url, ','.join(sites)), test)
+        for item in items:
+            sev = item.severity
+            if sev == 'Information' or sev == 'Informational':
+                sev = 'Info'
+            item.severity = sev
+            item.date = test.target_start
+            item.reporter = test.lead
+            item.save()
+        mark_end_test(test)

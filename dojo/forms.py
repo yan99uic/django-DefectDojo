@@ -544,20 +544,18 @@ class DeleteEngagementForm(forms.ModelForm):
 
 
 class TestForm(forms.ModelForm):
-    test_tool = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all().order_by('name'))
+    test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
+    test_tool = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all().order_by('name'),required=False)
     environment = forms.ModelChoiceField(
         queryset=Development_Environment.objects.all().order_by('name'))
     # credential = forms.ModelChoiceField(Cred_User.objects.all(), required=False)
-    target_start = forms.DateTimeField(widget=forms.TextInput(
-        attrs={'class': 'datepicker'}))
-    target_end = forms.DateTimeField(widget=forms.TextInput(                                                   attrs={'class': 'datepicker'}))      
     tags = forms.CharField(widget=forms.SelectMultiple(choices=[]),
                            required=False,
                            help_text="Add tags that help describe this test.  "
                                      "Choose from the list or add new tags.  Press TAB key to add.")
     lead = forms.ModelChoiceField(
         queryset=User.objects.exclude(is_staff=False),
-        required=False, label="Testing Lead")
+        label="Testing Lead")
 
     def __init__(self, *args, **kwargs):
         tags = Tag.objects.usage_for_model(Test)
@@ -567,7 +565,7 @@ class TestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        fields = ['test_tool', 'target_start', 'target_end', 'environment', 'tags', 'lead']
+        fields = ['test_type', 'test_tool', 'environment', 'tags', 'lead']
 
 
 class DeleteTestForm(forms.ModelForm):
@@ -576,7 +574,8 @@ class DeleteTestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        exclude = ('test_tool',
+        exclude = ('test_type',
+                   'test_tool',
                    'environment',
                    'target_start',
                    'target_end',

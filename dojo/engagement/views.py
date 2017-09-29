@@ -30,7 +30,7 @@ from dojo.models import Finding, Product, Engagement, Test, \
 from dojo.tools.factory import import_parser_factory
 from dojo.utils import get_page_items, add_breadcrumb, handle_uploaded_threat, \
     FileIterWrapper, get_cal_event, message, get_system_setting, create_notification
-from dojo.tasks import update_epic_task, add_epic_task, close_epic_task, async_poke_test
+from dojo.tasks import update_epic_task, add_epic_task, close_epic_task, async_schedule_test
 localtz = timezone(get_system_setting('time_zone'))
 
 logging.basicConfig(
@@ -351,7 +351,7 @@ def add_tests(request, eid):
                                  extra_tags='alert-success')
 
             create_notification(event='test_added', title='Test added', test=new_test, engagement=eng, url=request.build_absolute_uri(reverse('view_engagement', args=(eng.id,))))
-            async_poke_test.delay(new_test.id)
+            async_schedule_test.delay(new_test.id)
 
             if '_Add Another Test' in request.POST:
                 return HttpResponseRedirect(reverse('add_tests', args=(eng.id,)))
