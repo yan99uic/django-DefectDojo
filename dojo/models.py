@@ -514,7 +514,7 @@ class Endpoint(models.Model):
         endpoints = Endpoint.objects.filter(host__regex="^" + host + ":?",
                                             product=self.product).distinct()
 
-        findings = Finding.objects.filter(endpoints__in=endpoints,
+        findings = Finding.objects.filter(endpoint__in=endpoints,
                                           active=True,
                                           verified=True,
                                           out_of_scope=False).distinct()
@@ -526,7 +526,7 @@ class Endpoint(models.Model):
 
         endpoints = Endpoint.objects.filter(host__regex="^" + host + ":?",
                                             product=self.product).distinct()
-        return Finding.objects.filter(endpoints__in=endpoints,
+        return Finding.objects.filter(endpoint__in=endpoints,
                                       active=True,
                                       verified=True,
                                       mitigated__isnull=True,
@@ -620,7 +620,7 @@ class Finding(models.Model):
     description = models.TextField()
     mitigation = models.TextField()
     impact = models.TextField()
-    endpoints = models.ManyToManyField(Endpoint, blank=True, )
+    endpoint = models.ForeignKey(Endpoint, editable=False)
     unsaved_endpoints = []
     unsaved_request = None
     unsaved_response = None
@@ -730,8 +730,7 @@ class Finding(models.Model):
         long_desc += '*' + self.title + '*\n\n'
         long_desc += '*Severity:* ' + self.severity + '\n\n'
         long_desc += '*Systems*: \n'
-        for e in self.endpoints.all():
-            long_desc += str(e) + '\n\n'
+        long_desc += str(self.endpoint) + '\n\n'
         long_desc += '*Description*: \n' + self.description + '\n\n'
         long_desc += '*Mitigation*: \n' + self.mitigation + '\n\n'
         long_desc += '*Impact*: \n' + self.impact + '\n\n'
@@ -790,8 +789,6 @@ class Finding(models.Model):
         #         res = re.sub(r'\n\s*\n', '\n', res)
         #         return res
 
-
-Finding.endpoints.through.__unicode__ = lambda x: "Endpoint: " + x.endpoint.host
 
 class Stub_Finding(models.Model):
     title = models.TextField(max_length=1000, blank=False, null=False)

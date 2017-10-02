@@ -449,6 +449,7 @@ def re_import_scan_results(request, tid):
 
     form.initial['tags'] = [tag.name for tag in t.tags]
     if request.method == "POST":
+        print request.session.session_key
         form = ReImportScanForm(request.POST, request.FILES)
         if form.is_valid():
             scan_date = form.cleaned_data['scan_date']
@@ -557,7 +558,7 @@ def re_import_scan_results(request, tid):
                 to_mitigate = set(original_items) - set(new_items)
                 for finding_id in to_mitigate:
                     finding = Finding.objects.get(id=finding_id)
-                    finding.mitigated = datetime.combine(scan_date, datetime.now(tz=localtz).time())
+                    finding.mitigated = datetime.now(tz=localtz)  #datetime.combine(scan_date, datetime.now(tz=localtz).time())
                     finding.mitigated_by = request.user
                     finding.active = False
                     finding.save()

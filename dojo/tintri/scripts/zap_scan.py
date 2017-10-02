@@ -7,6 +7,10 @@ from zapv2 import ZAPv2
 import urllib2
 import ssl
 import json
+import requests
+import urlparse
+
+ZPXY = {'http':'http://localhost:8080', 'https':'http://localhost:8080'}
 
 def fail(err):
     print err
@@ -16,21 +20,38 @@ def notify(msg):
     print msg
     sys.stdout.flush()
 
-# Test input zap-scan <URL>
+def login_site(url):
+    login_data={"newPassword":None,
+                "fullApiVersion":"v310.71",
+                "username":"admin",
+                "password":"tintri99",
+                "roles":None,
+                "typeId":"com.tintri.api.rest.vcommon.dto.rbac.RestApiCredentials"}  
+     requests.post('https://ttvm122.tintri.com/api/v310/flex/session/login/action=create', 
+                   proxies=ZPXY,
+                   data=json.dumps(login_data), 
+                   verify=False, 
+                   headers={'Content-type': 'application/json'})
+
+
+# Test input zap-scan <URL|HOST>
 if len(sys.argv) < 2:
-    fail('Usage: zap-scan URLs')
+    fail('Usage: zap-scan URLs/hosts')
 
 # Quick test remote URL
 targets = []
-for u in sys.argv[1].split(','):
-    url = u.strip() 
-    if not url.startswith('http'):
-        url = "https://" + url
+for t in sys.argv[1].split(','):
+    th = u.strip()
+    if not th:
+        continue
+    ue = urlparse.urlparse(th)
+    if ue.netloc:
+        th = ue.netloc
     try:
-        if urllib2.urlopen(urllib2.Request(url), context=ssl._create_unverified_context()) is not None:
-            targets.append(url)
+        if urllib2.urlopen(urllib2.Request('https://'+th), context=ssl._create_unverified_context()) is not None:
+            targets.append(th)
     except:
-        print 'instance URL not available: ', url
+        print 'instance not available: ', t
 
 if not targets:
     fail('none of the target is accessible')
