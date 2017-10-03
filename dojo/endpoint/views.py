@@ -52,9 +52,7 @@ def vulnerable_endpoints(request):
         if len(p) == 1:
             product = get_object_or_404(Product, id=p[0])
 
-    ids = get_endpoint_ids(EndpointFilter(request.GET, queryset=endpoints, user=request.user).qs)
-    endpoints = EndpointFilter(request.GET, queryset=endpoints.filter(id__in=ids), user=request.user)
-    paged_endpoints = get_page_items(request, endpoints.qs, 25)
+    paged_endpoints = get_page_items(request, endpoints, 25)
     add_breadcrumb(title="Vulnerable Endpoints", top_level=not len(request.GET), request=request)
     return render(request,
                   'dojo/endpoints.html',
@@ -82,9 +80,7 @@ def all_endpoints(request):
         if len(p) == 1:
             product = get_object_or_404(Product, id=p[0])
 
-    ids = get_endpoint_ids(EndpointFilter(request.GET, queryset=endpoints, user=request.user).qs)
-    endpoints = EndpointFilter(request.GET, queryset=endpoints.filter(id__in=ids), user=request.user)
-    paged_endpoints = get_page_items(request, endpoints.qs, 25)
+    paged_endpoints = get_page_items(request, endpoints, 25)
     add_breadcrumb(title="All Endpoints", top_level=not len(request.GET), request=request)
     return render(request,
                   'dojo/endpoints.html',
@@ -94,28 +90,8 @@ def all_endpoints(request):
                    })
 
 
-def get_endpoint_ids(endpoints):
-    hosts = []
-    ids = []
-    for e in endpoints:
-        if ":" in e.host:
-            host_no_port = e.host[:e.host.index(':')]
-        else:
-            host_no_port = e.host
-        key = host_no_port + '-' + str(e.product.id)
-        if key in hosts:
-            continue
-        else:
-            hosts.append(key)
-            ids.append(e.id)
-    return ids
-
-
 def view_endpoint(request, eid):
     endpoint = get_object_or_404(Endpoint, id=eid)
-    host = endpoint.host_no_port
-    endpoints = Endpoint.objects.filter(host__regex="^" + host + ":?",
-                                        product=endpoint.product).distinct()
 
     if (request.user in endpoint.product.authorized_users.all()) or request.user.is_staff:
         pass
@@ -132,13 +108,13 @@ def view_endpoint(request, eid):
             endpoint_metadata[cf] = cfv[0]
 
 
-    all_findings = Finding.objects.filter(endpoints__in=endpoints).distinct()
+    all_findings = Finding.objects.filter(endpoint=endpoint).distinct()
 
-    active_findings = Finding.objects.filter(endpoints__in=endpoints,
+    active_findings = Finding.objects.filter(endpoint=endpoint,
                                              active=True,
                                              verified=True).distinct()
 
-    closed_findings = Finding.objects.filter(endpoints__in=endpoints,
+    closed_findings = Finding.objects.filter(endpoint=endpoint,
                                              mitigated__isnull=False).distinct()
     if all_findings:
         start_date = localtz.localize(datetime.combine(all_findings.last().date, datetime.min.time()))
@@ -160,7 +136,6 @@ def view_endpoint(request, eid):
     return render(request,
                   "dojo/view_endpoint.html",
                   {"endpoint": endpoint,
-                   "endpoints": endpoints,
                    "findings": paged_findings,
                    'all_findings': all_findings,
                    'opened_per_month': monthly_counts['opened_per_period'],

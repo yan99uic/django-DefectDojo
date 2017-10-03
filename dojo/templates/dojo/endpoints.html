@@ -39,14 +39,14 @@
                     <table id="endpoints"
                            class="tablesorter-bootstrap table table-bordered table-condensed table-striped table-hover">
                         <tr>
-                            <th>{% dojo_sort request 'Endpoint' 'host' %}</th>
+                            <th>{% dojo_sort request 'Endpoint' 'name' %}</th>
                             <th>{% dojo_sort request 'Product' 'product' 'asc' %}</th>
                             <th nowrap="nowrap">Number of <br/> Open Findings</th>
                         </tr>
 
                         {% for e in endpoints %}
                             <tr>
-                                <td><a href="{% url 'view_endpoint' e.id %}">{{ e.host_no_port }}</a>
+                                <td><a href="{% url 'view_endpoint' e.id %}">{{ e.name }}</a>
                                   {% if e.tags %}
                                       <sup>
                                           {% for tag in e.tags %}

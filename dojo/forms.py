@@ -841,9 +841,9 @@ class EditEndpointForm(forms.ModelForm):
 
 class AddEndpointForm(forms.Form):
     product = forms.CharField(required=True,
-                              widget=forms.widgets.HiddenInput(), help_text="The product this release endpoint should be "
-                                                                            "associated with.")
-    endpoint = forms.CharField(max_length=250, required=True, label="Endpoint",
+                              widget=forms.widgets.HiddenInput(), 
+                              help_text="The product this release endpoint should be associated with.")
+    endpoint = forms.CharField(max_length=250, required=True, label="Release Endpoint",
                                help_text="The product release endpoint.")
     tags = forms.CharField(widget=forms.SelectMultiple(choices=[]),
                            required=False,
@@ -863,6 +863,7 @@ class AddEndpointForm(forms.Form):
             self.fields['product'].initial = product.id
 
         self.product = product
+        self.endpoint = None 
         self.fields['tags'].widget.choices = t
 
     def save(self):
@@ -875,6 +876,9 @@ class AddEndpointForm(forms.Form):
 
         if 'endpoint' in cleaned_data and 'product' in cleaned_data:
             endpoint = cleaned_data['endpoint']
+            if Endpoint.objects.filter(name = endpoint).count() > 0:
+                raise forms.ValidationError('This release endpoint name is already defined')
+            self.endpoint = endpoint
             product = cleaned_data['product']
             if isinstance(product, Product):
                 self.product = product

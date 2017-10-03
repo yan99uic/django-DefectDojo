@@ -16,7 +16,6 @@ from django.shortcuts import render, get_object_or_404
 from pytz import timezone
 
 from dojo.celery import app
-from dojo.endpoint.views import get_endpoint_ids
 from dojo.filters import ReportFindingFilter, ReportAuthedFindingFilter, EndpointReportFilter, ReportFilter, \
     EndpointFilter
 from dojo.forms import ReportOptionsForm, DeleteReportForm
@@ -61,9 +60,6 @@ def report_builder(request):
                                         finding__duplicate=False,
                                         finding__out_of_scope=False,
                                         ).distinct()
-    ids = get_endpoint_ids(endpoints)
-
-    endpoints = Endpoint.objects.filter(id__in=ids)
 
     endpoints = EndpointFilter(request.GET, queryset=endpoints)
 
@@ -173,11 +169,6 @@ def report_endpoints(request):
                                         finding__duplicate=False,
                                         finding__out_of_scope=False,
                                         ).distinct()
-
-    ids = get_endpoint_ids(endpoints)
-
-    endpoints = Endpoint.objects.filter(id__in=ids)
-    endpoints = EndpointFilter(request.GET, queryset=endpoints)
 
     paged_endpoints = get_page_items(request, endpoints.qs, 25)
 
@@ -387,10 +378,6 @@ def product_endpoint_report(request, pid):
                                         finding__duplicate=False,
                                         finding__out_of_scope=False,
                                         )
-
-    ids = get_endpoint_ids(endpoints)
-
-    endpoints = Endpoint.objects.filter(id__in=ids)
 
     if request.user.is_staff or request.user in product.authorized_users.all():
         pass  # user is authorized for this product
@@ -714,17 +701,15 @@ def generate_report(request, obj):
 
     elif type(obj).__name__ == "Endpoint":
         endpoint = obj
-        host = endpoint.host_no_port
-        report_name = "Endpoint Report: " + host
+        report_name = "Endpoint Report: " + endpoint.name
         report_type = "Endpoint"
-        endpoints = Endpoint.objects.filter(host__regex="^" + host + ":?",
-                                            product=endpoint.product).distinct()
+        endpoints = Endpoint.objects.filter(product=endpoint.product).distinct()
         filename = "endpoint_finding_report.pdf"
         template = 'dojo/endpoint_pdf_report.html'
         report_title = "Endpoint Report"
-        report_subtitle = host
+        report_subtitle = endpoint.name
         findings = ReportFindingFilter(request.GET,
-                                       queryset=Finding.objects.filter(endpoints__in=endpoints,
+                                       queryset=Finding.objects.filter(endpoint=endpoint,
                                                                        ).prefetch_related('test',
                                                                                           'test__engagement__product',
                                                                                           'test__engagement__product__prod_type').distinct())

@@ -232,26 +232,11 @@ class Product(models.Model):
 
     @property
     def endpoint_count(self):
-        endpoints = Endpoint.objects.filter(finding__test__engagement__product=self,
+        return Endpoint.objects.filter(finding__test__engagement__product=self,
                                             finding__active=True,
                                             finding__verified=True,
-                                            finding__mitigated__isnull=True)
+                                            finding__mitigated__isnull=True).count()
 
-        hosts = []
-        ids = []
-        for e in endpoints:
-            if ":" in e.host:
-                host_no_port = e.host[:e.host.index(':')]
-            else:
-                host_no_port = e.host
-
-            if host_no_port in hosts:
-                continue
-            else:
-                hosts.append(host_no_port)
-                ids.append(e.id)
-
-        return len(hosts)
 
     def open_findings(self, start_date=None, end_date=None):
         if start_date is None or end_date is None:
@@ -453,14 +438,14 @@ class CWE(models.Model):
 
 
 class Endpoint(models.Model):
-    name = models.CharField(max_length=250, unique = True)
+    name = models.CharField(max_length=250, unique=True, null=False, blank=False)
     product = models.ForeignKey(Product)
 
     class Meta:
         ordering = ['product', 'name']
 
     def __unicode__(self):
-        return name
+        return unicode(self.name)
 
     def __eq__(self, other):
         if isinstance(other, Endpoint):

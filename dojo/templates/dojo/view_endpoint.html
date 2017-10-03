@@ -11,7 +11,7 @@
         <div class="panel-heading">
             <div class="clearfix">
                 <h4 class="pull-left to_highlight finding-title">
-                    {{ endpoint.host_no_port }}
+                    {{ endpoint.name }}
                     <span class="text-muted endpoint_product">
                         <a href="{% url 'view_product' endpoint.product.id %}">{{ endpoint.product }}</a>
                     </span>
@@ -129,30 +129,6 @@
                 <!-- /.panel -->
             </div>
         </div>
-    </div>
-
-    <div class="panel panel-default endpoints table-responsive">
-        <div class="panel-heading">
-            <h4>Vulnerable Services</h4>
-        </div>
-        {% if  endpoints %}
-            {% colgroup endpoints into 3 cols as grouped_items %}
-            <table class="table-striped table table table-condensed table-hover finding-endpoints">
-                {% for row in grouped_items %}
-                    <tr>
-                        {% for item in row %}
-                            <td>{% if item %}<i class="fa fa-circle"></i> {{ item }}{% endif %}
-                            </td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </table>
-        {% else %}
-            <div id="vuln_endpoints" class="panel-body endpoint-panel table-responsive">
-                No endpoints.
-            </div>
-        {% endif %}
-
     </div>
 
     {% if endpoint.tags %}
