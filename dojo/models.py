@@ -453,54 +453,14 @@ class CWE(models.Model):
 
 
 class Endpoint(models.Model):
-    protocol = models.CharField(null=True, blank=True, max_length=10,
-                                help_text="The communication protocol such as 'http', 'ftp', etc.")
-    host = models.CharField(null=True, blank=True, max_length=500,
-                            help_text="The host name or IP address, you can also include the port number. For example"
-                                      "'127.0.0.1', '127.0.0.1:8080', 'localhost', 'yourdomain.com'.")
-    fqdn = models.CharField(null=True, blank=True, max_length=500)
-    port = models.IntegerField(null=True, blank=True, help_text="The network port associated with the endpoint.")
-    path = models.CharField(null=True, blank=True, max_length=500,
-                            help_text="The location of the resource, it should start with a '/'. For example"
-                                      "/endpoint/420/edit")
-    query = models.CharField(null=True, blank=True, max_length=5000,
-                             help_text="The query string, the question mark should be omitted."
-                                       "For example 'group=4&team=8'")
-    fragment = models.CharField(null=True, blank=True, max_length=500,
-                                help_text="The fragment identifier which follows the hash mark. The hash mark should "
-                                          "be omitted. For example 'section-13', 'paragraph-2'.")
-    product = models.ForeignKey(Product, null=True, blank=True, )
+    name = models.CharField(max_length=250, unique = True)
+    product = models.ForeignKey(Product)
 
     class Meta:
-        ordering = ['product', 'protocol', 'host', 'path', 'query', 'fragment']
+        ordering = ['product', 'name']
 
     def __unicode__(self):
-        from urlparse import uses_netloc
-
-        netloc = self.host
-        fqdn = self.fqdn
-        port = self.port
-        scheme = self.protocol
-        url = self.path if self.path else ''
-        query = self.query
-        fragment = self.fragment
-
-        if port:
-            netloc += ':%s' % port
-
-        if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
-            if url and url[:1] != '/': url = '/' + url
-            if scheme and scheme in uses_netloc and url[:2] != '//':
-                url = '//' + (netloc or '') + url
-            else:
-                url = (netloc or '') + url
-        if scheme:
-            url = scheme + ':' + url
-        if query:
-            url = url + '?' + query
-        if fragment:
-            url = url + '#' + fragment
-        return url
+        return name
 
     def __eq__(self, other):
         if isinstance(other, Endpoint):
@@ -509,12 +469,7 @@ class Endpoint(models.Model):
             return NotImplemented
 
     def finding_count(self):
-        host = self.host_no_port
-
-        endpoints = Endpoint.objects.filter(host__regex="^" + host + ":?",
-                                            product=self.product).distinct()
-
-        findings = Finding.objects.filter(endpoint__in=endpoints,
+        findings = Finding.objects.filter(endpoint=self,
                                           active=True,
                                           verified=True,
                                           out_of_scope=False).distinct()
@@ -522,11 +477,7 @@ class Endpoint(models.Model):
         return findings.count()
 
     def active_findings(self):
-        host = self.host_no_port
-
-        endpoints = Endpoint.objects.filter(host__regex="^" + host + ":?",
-                                            product=self.product).distinct()
-        return Finding.objects.filter(endpoint__in=endpoints,
+        return Finding.objects.filter(endpoint=self,
                                       active=True,
                                       verified=True,
                                       mitigated__isnull=True,
@@ -535,20 +486,9 @@ class Endpoint(models.Model):
 
     def get_breadcrumbs(self):
         bc = self.product.get_breadcrumbs()
-        bc += [{'title': self.host_no_port,
+        bc += [{'title': self.name,
                 'url': reverse('view_endpoint', args=(self.id,))}]
         return bc
-
-    @staticmethod
-    def from_uri(uri):
-        return Endpoint()
-
-    @property
-    def host_no_port(self):
-        if ":" in self.host:
-            return self.host[:self.host.index(":")]
-        else:
-            return self.host
 
 
 class Notes(models.Model):
