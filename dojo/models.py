@@ -578,6 +578,7 @@ class Test(models.Model):
     engagement = models.ForeignKey(Engagement, editable=False)
     lead = models.ForeignKey(User)
     test_type = models.ForeignKey(Test_Type)
+    test_endpoint = models.ForeignKey(Endpoint)
     test_tool = models.ForeignKey(Tool_Configuration, null=True, blank=True, related_name='tool_configuration')
     target_start = models.DateTimeField(null=True, blank=True, editable=False)
     target_end = models.DateTimeField(null=True, blank=True, editable=False)
