@@ -234,7 +234,6 @@ def close_finding(request, fid):
             finding.mitigated_by = request.user
             finding.last_reviewed = finding.mitigated
             finding.last_reviewed_by = request.user
-            finding.endpoints.clear()
             finding.save()
 
             messages.add_message(request,
@@ -275,7 +274,6 @@ def defect_finding_review(request, fid):
                 finding.mitigated_by = request.user
                 finding.last_reviewed = finding.mitigated
                 finding.last_reviewed_by = request.user
-                finding.endpoints.clear()
                 jira = get_jira_connection(finding)
                 j_issue = JIRA_Issue.objects.get(finding=finding)
                 issue = jira.issue(j_issue.jira_id)
@@ -380,7 +378,6 @@ def edit_finding(request, fid):
             create_template = new_finding.is_template
             # always false now since this will be deprecated soon in favor of new Finding_Template model
             new_finding.is_template = False
-            new_finding.endpoints = form.cleaned_data['endpoints']
             new_finding.last_reviewed = datetime.now(tz=localtz)
             new_finding.last_reviewed_by = request.user
             tags = request.POST.getlist('tags')
@@ -434,10 +431,6 @@ def edit_finding(request, fid):
                                  extra_tags='alert-danger')
             form_error = True
 
-    if form_error and 'endpoints' in form.cleaned_data:
-        form.fields['endpoints'].queryset = form.cleaned_data['endpoints']
-    else:
-        form.fields['endpoints'].queryset = finding.endpoints.all()
     form.initial['tags'] = [tag.name for tag in finding.tags]
     add_breadcrumb(parent=finding, title="Edit", top_level=False, request=request)
     return render(request, 'dojo/edit_findings.html',
@@ -685,8 +678,6 @@ def promote_to_finding(request, fid):
             new_finding.out_of_scope = False
 
             new_finding.save()
-            new_finding.endpoints = form.cleaned_data['endpoints']
-            new_finding.save()
 
             finding.delete()
             if 'jiraform' in request.POST:
@@ -702,10 +693,6 @@ def promote_to_finding(request, fid):
 
             return HttpResponseRedirect(reverse('view_test', args=(test.id,)))
         else:
-            if 'endpoints' in form.cleaned_data:
-                form.fields['endpoints'].queryset = form.cleaned_data['endpoints']
-            else:
-                form.fields['endpoints'].queryset = Endpoint.objects.none()
             form_error = True
             messages.add_message(request,
                                  messages.ERROR,

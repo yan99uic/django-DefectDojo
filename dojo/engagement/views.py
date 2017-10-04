@@ -95,7 +95,7 @@ def new_engagement(request):
     if request.method == 'POST':
         form = EngForm2(request.POST)
         if form.is_valid():
-            new_eng = form.save()
+            new_eng = form.save(commit=False)
             new_eng.lead = request.user
             new_eng.save()
             tags = request.POST.getlist('tags')
@@ -383,36 +383,22 @@ def import_scan_results(request, eid):
         cred_form.fields["cred_user"].queryset = Cred_Mapping.objects.filter(engagement=engagement).order_by('cred_id')
         if form.is_valid():
             file = request.FILES['file']
-            scan_date = form.cleaned_data['scan_date']
             min_sev = form.cleaned_data['minimum_severity']
             active = form.cleaned_data['active']
             verified = form.cleaned_data['verified']
-            result_format = request.POST['result_format']
-            if not any(result_format in code for code in ImportScanForm.SCAN_TYPE_CHOICES):
-                raise Http404()
-
-            tt, t_created = Test_Type.objects.get_or_create(name=scan_type)
-            # will save in development environment
-            environment, env_created = Development_Environment.objects.get_or_create(name="Development")
+            tt = form.cleaned_data['test_type']
+            scan_date = form.cleaned_data['scan_date']
+            if not scan_date:
+                scan_date = datetime.now(tz=localtz)
             t = Test(engagement=engagement, test_type=tt, target_start=scan_date,
-                     target_end=scan_date, environment=environment, percent_complete=100)
+                     target_end=scan_date, percent_complete=100)
             t.lead = request.user
+            t.release_endpoint = form.cleaned_data['release_endpoint']
             t.full_clean()
             t.save()
             tags = request.POST.getlist('tags')
             ts = ", ".join(tags)
             t.tags = ts
-
-            #Save the credential to the test
-            if cred_form.is_valid():
-                if cred_form.cleaned_data['cred_user']:
-                    #Select the credential mapping object from the selected list and only allow if the credential is associated with the product
-                    cred_user = Cred_Mapping.objects.filter(pk=cred_form.cleaned_data['cred_user'].id, engagement=eid).first()
-
-                    new_f = cred_form.save(commit=False)
-                    new_f.test = t
-                    new_f.cred_id = cred_user.cred_id
-                    new_f.save()
 
             try:
                 parser = import_parser_factory(file, t)
@@ -431,6 +417,7 @@ def import_scan_results(request, eid):
                         continue
 
                     item.test = t
+                    item.endpoint = t.release_endpoint
                     item.date = t.target_start
                     item.reporter = request.user
                     item.last_reviewed = datetime.now(tz=localtz)
@@ -456,24 +443,19 @@ def import_scan_results(request, eid):
                         burp_rr.clean()
                         burp_rr.save()
 
-                    for endpoint in item.unsaved_endpoints:
-                        ep, created = Endpoint.objects.get_or_create(protocol=endpoint.protocol,
-                                                                     host=endpoint.host,
-                                                                     path=endpoint.path,
-                                                                     query=endpoint.query,
-                                                                     fragment=endpoint.fragment,
-                                                                     product=t.engagement.product)
-
-                        item.endpoints.add(ep)
-
                     if item.unsaved_tags is not None:
                         item.tags = item.unsaved_tags
 
                     finding_count += 1
+                
+                if parser.generated:
+                    t.target_start = parser.generated.replace(tzinfo=localtz)
+                    t.target_end = t.target_start
+                    t.save()
 
                 messages.add_message(request,
                                      messages.SUCCESS,
-                                     scan_type + ' processed, a total of ' + message(finding_count, 'finding',
+                                     tt.name + ' processed, a total of ' + message(finding_count, 'finding',
                                                                                      'processed'),
                                      extra_tags='alert-success')
 
@@ -495,6 +477,7 @@ def import_scan_results(request, eid):
                   {'form': form,
                    'eid': engagement.id,
                    'cred_form': cred_form,
+                   'scan_types': Test_Type.objects.all(),
                    })
 
 

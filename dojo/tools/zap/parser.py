@@ -10,10 +10,12 @@ See the file 'doc/LICENSE' for the license information
 import re
 import socket
 import urlparse
+from datetime import datetime
 from defusedxml import ElementTree as ET
 
 from dojo.models import Finding, Endpoint
 
+LEVEL_MAP = {'1':'Low', '2':'Medium', '3':'High'}
 
 class ZapXmlParser(object):
     """
@@ -30,8 +32,10 @@ class ZapXmlParser(object):
         tree = self.parse_xml(xml_output)
 
         if tree:
+            self.generated = datetime.strptime(tree.getroot().attrib['generated'], '%a, %d %b %Y %H:%M:%S')
             self.items = self.get_items(tree, test)
         else:
+            self.generated = None
             self.items = []
 
     def parse_xml(self, xml_output):
@@ -58,10 +62,9 @@ class ZapXmlParser(object):
         items = list()
         for node in tree.findall('site'):
             site = Site(node)
-            main_host = Endpoint(host=site.ip + site.port if site.port is not None else "")
             for item in site.items:
                 severity = item.riskdesc.split(' ', 1)[0]
-                references = ''
+                references = '' 
                 for ref in item.ref:
                     references += ref + "\n"
 
@@ -78,18 +81,8 @@ class ZapXmlParser(object):
                                duplicate=False,
                                out_of_scope=False,
                                mitigated=None,
-                               impact="No impact provided",
+                               impact=LEVEL_MAP[item.confidence],
                                numerical_severity=Finding.get_numerical_severity(severity))
-
-                find.unsaved_endpoints = [main_host]
-                for i in item.items:
-                    parts = urlparse.urlparse(i['uri'])
-                    find.unsaved_endpoints.append(Endpoint(protocol=parts.scheme,
-                                                           host=parts.netloc,
-                                                           path=parts.path,
-                                                           query=parts.query,
-                                                           fragment=parts.fragment,
-                                                           product=test.engagement.product))
                 items.append(find)
         return items
 
@@ -172,6 +165,7 @@ class Item(object):
 
         self.severity = self.get_text_from_subnode('riskcode')
         self.riskdesc = self.get_text_from_subnode('riskdesc')
+        self.confidence = self.get_text_from_subnode('confidence').strip()
         self.desc = self.get_text_from_subnode('desc')
         self.resolution = self.get_text_from_subnode('solution') if self.get_text_from_subnode('solution') else ""
         self.desc += "\nReference: " + self.get_text_from_subnode('reference') if self.get_text_from_subnode(

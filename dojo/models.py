@@ -178,7 +178,7 @@ class Report_Type(models.Model):
 
 
 class Test_Type(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     result_description = models.CharField(max_length=1000)
 
     def __unicode__(self):
@@ -662,7 +662,7 @@ class Finding(models.Model):
             async_false_history.delay(self, *args, **kwargs)
 
     def clean(self):
-        no_check = ["test", "reporter"]
+        no_check = ["test", "reporter", "endpoint"]
         bigfields = ["description", "mitigation", "references", "impact", "url"]
         for field_obj in self._meta.fields:
             field = field_obj.name

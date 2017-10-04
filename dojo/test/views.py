@@ -21,7 +21,7 @@ from dojo.filters import TemplateFindingFilter
 from dojo.forms import NoteForm, TestForm, FindingForm, \
     DeleteTestForm, AddFindingForm, \
     ImportScanForm, ReImportScanForm, FindingBulkUpdateForm, JIRAFindingForm
-from dojo.models import Finding, Test, Notes, \
+from dojo.models import Finding, Test, Test_Type, Notes, \
     BurpRawRequestResponse, Endpoint, Stub_Finding, Finding_Template, JIRA_PKey, Cred_User, Cred_Mapping, Dojo_User
 from dojo.tools.factory import import_parser_factory
 from dojo.utils import get_page_items, add_breadcrumb, get_cal_event, message, \
@@ -70,7 +70,7 @@ def view_test(request, tid):
 
     fpage = get_page_items(request, findings, 25)
     sfpage = get_page_items(request, stub_findings, 25)
-    show_re_upload = any(test.test_type.name in code for code in ImportScanForm.SCAN_TYPE_CHOICES)
+    show_re_upload = findings.count() > 0
 
     add_breadcrumb(parent=test, top_level=False, request=request)
     return render(request, 'dojo/view_test.html',
@@ -417,8 +417,16 @@ def finding_bulk_update(request, tid):
         if form.is_valid():
             finding_to_update = request.POST.getlist('finding_to_update')
             finds = Finding.objects.filter(test=test, id__in=finding_to_update)
-            finds.update(severity=form.cleaned_data['severity'],
+            severity = form.cleaned_data['severity']
+            if severity:
+                finds.update(severity=severity,
                          active=form.cleaned_data['active'],
+                         verified=form.cleaned_data['verified'],
+                         false_p=form.cleaned_data['false_p'],
+                         duplicate=form.cleaned_data['duplicate'],
+                         out_of_scope=form.cleaned_data['out_of_scope'])
+            else:
+                finds.update(active=form.cleaned_data['active'],
                          verified=form.cleaned_data['verified'],
                          false_p=form.cleaned_data['false_p'],
                          duplicate=form.cleaned_data['duplicate'],
@@ -606,4 +614,5 @@ def re_import_scan_results(request, tid):
                   {'form': form,
                    'eid': engagement.id,
                    'additional_message': additional_message,
+                   'scan_types': Test_Type.objects.all(),
                    })
