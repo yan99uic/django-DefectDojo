@@ -360,9 +360,11 @@ def add_tests(request, eid):
             elif '_Finished' in request.POST:
                 return HttpResponseRedirect(reverse('view_engagement', args=(eng.id,)))
     else:
-        form = TestForm()
-	form.initial['target_start'] = eng.target_start
-	form.initial['target_end'] = eng.target_end
+        form = TestForm(initial={
+            'target_start': eng.target_start,
+            'target_end': eng.target_end,
+        })
+        form.fields['release_endpoint'].queryset = Endpoint.objects.filter(product=eng.product).order_by('name')
     add_breadcrumb(parent=eng, title="Add Tests", top_level=False, request=request)
     return render(request, 'dojo/add_tests.html',
                   {'form': form,

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from urlparse import urlsplit, urlunsplit
 
 from custom_field.models import CustomField
@@ -237,12 +237,9 @@ class ImportScanForm(forms.Form):
                          ("Node Security Platform Scan", "Node Security Platform Scan"),
                          ("Qualys Scan", "Qualys Scan"),
                          ("Generic Findings Import", "Generic Findings Import"))
-    scan_date = forms.DateTimeField(
-        required=True,
-        label="Scan Completion Date",
-        help_text="Scan completion date will be used on all findings.",
-        initial=datetime.now().strftime("%m/%d/%Y"),
-        widget=forms.TextInput(attrs={'class': 'datepicker'}))
+    test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
+    release_endpoint = forms.ModelChoiceField(queryset=Endpoint.objects.all())
+    environment = forms.ModelChoiceField(queryset=Development_Environment.objects.all().order_by('name'))
     minimum_severity = forms.ChoiceField(help_text='Minimum severity level to be imported',
                                          required=True,
                                          choices=SEVERITY_CHOICES[0:4])
@@ -254,6 +251,11 @@ class ImportScanForm(forms.Form):
                            required=False,
                            help_text="Add tags that help describe this scan.  "
                                      "Choose from the list or add new tags.  Press TAB key to add.")
+    scan_date = forms.DateTimeField(
+        required=False,
+        label="Scan Completion Date",
+        help_text="Scan completion date will be used on all findings.",
+        widget=forms.TextInput(attrs={'class': 'datepicker'}))
     file = forms.FileField(widget=forms.widgets.FileInput(
         attrs={"accept": ".xml, .csv, .nessus, .json"}),
         label="Choose report file",
@@ -268,18 +270,12 @@ class ImportScanForm(forms.Form):
     # date can only be today or in the past, not the future
     def clean_scan_date(self):
         date = self.cleaned_data['scan_date']
-        if date.date() > datetime.today().date():
+        if date and date.date() > datetime.today().date():
             raise forms.ValidationError("The date cannot be in the future!")
         return date
 
 
 class ReImportScanForm(forms.Form):
-    scan_date = forms.DateTimeField(
-        required=True,
-        label="Scan Completion Date",
-        help_text="Scan completion date will be used on all findings.",
-        initial=datetime.now().strftime("%m/%d/%Y"),
-        widget=forms.TextInput(attrs={'class': 'datepicker'}))
     minimum_severity = forms.ChoiceField(help_text='Minimum severity level to be imported',
                                          required=True,
                                          choices=SEVERITY_CHOICES[0:4])
@@ -289,6 +285,11 @@ class ReImportScanForm(forms.Form):
                            required=False,
                            help_text="Add tags that help describe this scan.  "
                                      "Choose from the list or add new tags.  Press TAB key to add.")
+    scan_date = forms.DateTimeField(
+        required=False,
+        label="Scan Completion Date",
+        help_text="Scan completion date will be used on all findings.",
+        widget=forms.TextInput(attrs={'class': 'datepicker'}))
     file = forms.FileField(widget=forms.widgets.FileInput(
         attrs={"accept": ".xml, .csv, .nessus, .json"}),
         label="Choose report file",
@@ -303,7 +304,7 @@ class ReImportScanForm(forms.Form):
     # date can only be today or in the past, not the future
     def clean_scan_date(self):
         date = self.cleaned_data['scan_date']
-        if date.date() > datetime.today().date():
+        if date and date.date() > datetime.today().date():
             raise forms.ValidationError("The date cannot be in the future!")
         return date
 
@@ -452,16 +453,15 @@ class EngForm(forms.ModelForm):
                   "listings.")
     description = forms.CharField(widget=forms.Textarea(attrs={}),
                                   required=False)
-    target_start = forms.DateField(widget=forms.TextInput(
+    target_start = forms.DateField(initial=datetime.now().strftime("%m/%d/%Y"),
+        widget=forms.TextInput(
         attrs={'class': 'datepicker'}))
-    target_end = forms.DateField(widget=forms.TextInput(
+    target_end = forms.DateField(initial=(datetime.now()+timedelta(days=7)).strftime("%m/%d/%Y"),
+        widget=forms.TextInput(
         attrs={'class': 'datepicker'}))
     threat_model = forms.BooleanField(required=False)
     api_test = forms.BooleanField(required=False, label='API Test')
     pen_test = forms.BooleanField(required=False)
-    lead = forms.ModelChoiceField(
-        queryset=User.objects.exclude(is_staff=False),
-        required=True, label="Testing Lead")
     test_strategy = forms.URLField(required=False, label="Test Strategy URL")
 
     def is_valid(self):
@@ -496,15 +496,14 @@ class EngForm2(forms.ModelForm):
                            help_text="Add tags that help describe this engagement.  "
                                      "Choose from the list or add new tags.  Press TAB key to add.")
     product = forms.ModelChoiceField(queryset=Product.objects.all())
-    target_start = forms.DateField(widget=forms.TextInput(
+    target_start = forms.DateField(initial=datetime.now().strftime("%m/%d/%Y"),
+        widget=forms.TextInput(
         attrs={'class': 'datepicker'}))
-    target_end = forms.DateField(widget=forms.TextInput(
+    target_end = forms.DateField(initial=(datetime.now()+timedelta(days=7)).strftime("%m/%d/%Y"),
+        widget=forms.TextInput(
         attrs={'class': 'datepicker'}))
     test_options = (('API', 'API Test'), ('Static', 'Static Check'),
                     ('Pen', 'Pen Test'), ('Web App', 'Web Application Test'))
-    lead = forms.ModelChoiceField(
-        queryset=User.objects.exclude(is_staff=False),
-        required=True, label="Testing Lead")
     test_strategy = forms.URLField(required=False, label="Test Strategy URL")
 
     def __init__(self, *args, **kwargs):
@@ -540,11 +539,12 @@ class DeleteEngagementForm(forms.ModelForm):
         exclude = ['name', 'version', 'eng_type', 'first_contacted', 'target_start',
                    'target_end', 'lead', 'requester', 'reason', 'report_type',
                    'product', 'test_strategy', 'threat_model', 'api_test', 'pen_test',
-                   'check_list', 'status']
+                   'check_list', 'status', 'description']
 
 
 class TestForm(forms.ModelForm):
     test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
+    release_endpoint = forms.ModelChoiceField(queryset=Endpoint.objects.all())
     test_tool = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all().order_by('name'),required=False)
     environment = forms.ModelChoiceField(
         queryset=Development_Environment.objects.all().order_by('name'))
@@ -553,9 +553,6 @@ class TestForm(forms.ModelForm):
                            required=False,
                            help_text="Add tags that help describe this test.  "
                                      "Choose from the list or add new tags.  Press TAB key to add.")
-    lead = forms.ModelChoiceField(
-        queryset=User.objects.exclude(is_staff=False),
-        label="Testing Lead")
 
     def __init__(self, *args, **kwargs):
         tags = Tag.objects.usage_for_model(Test)
@@ -565,7 +562,7 @@ class TestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        fields = ['test_type', 'test_tool', 'environment', 'tags', 'lead']
+        fields = ['test_type', 'test_tool', 'release_endpoint', 'environment', 'tags']
 
 
 class DeleteTestForm(forms.ModelForm):

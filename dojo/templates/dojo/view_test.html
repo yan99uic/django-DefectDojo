@@ -68,8 +68,8 @@
         <div class="table-responsive">
             <table class="table-striped table table-condensed table-hover centered">
                 <tr>
-                    <th>Environment</th>
                     <th>Test Type</th>
+                    <th>Endpoint</th>
                     <th>Test Tool</th>
                     <th>Target Start Date</th>
                     <th>Target End Date</th>
@@ -79,14 +79,8 @@
 
                 </tr>
                 <tr>
-                    <td>
-                        {% if test.environment %}
-                            {{ test.environment }}
-                        {% else %}
-                            <b><i>Unknown</i></b>
-                        {% endif %}
-                    </td>
                     <td>{{ test.test_type }}</td>
+                    <td>{{ test.release_endpoint }}</td>
                     <td>{{ test.test_tool }}</td>
                     <td>{{ test.target_start.date }}</td>
                     <td>{{ test.target_end.date }}</td>
