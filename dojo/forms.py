@@ -147,7 +147,7 @@ class Product_TypeForm(forms.ModelForm):
 class Test_TypeForm(forms.ModelForm):
     class Meta:
         model = Test_Type
-        fields = ['name']
+        fields = ['name', 'result_description']
 
 
 class Development_EnvironmentForm(forms.ModelForm):
@@ -227,24 +227,13 @@ class Product_TypeProductForm(forms.ModelForm):
 
 
 class ImportScanForm(forms.Form):
-    SCAN_TYPE_CHOICES = (("Burp Scan", "Burp Scan"), ("Nessus Scan", "Nessus Scan"), ("Nmap Scan", "Nmap Scan"),
-                         ("Nexpose Scan", "Nexpose Scan"),
-                         ("AppSpider Scan", "AppSpider Scan"), ("Veracode Scan", "Veracode Scan"),
-                         ("Checkmarx Scan", "Checkmarx Scan"), ("ZAP Scan", "ZAP Scan"),
-                         ("Arachni Scan", "Arachni Scan"), ("VCG Scan", "VCG Scan"),
-                         ("Dependency Check Scan", "Dependency Check Scan"), ("Retire.js Scan", "Retire.js Scan"),
-                         ("Node Security Platform Scan", "Node Security Platform Scan"),
-                         ("Qualys Scan", "Qualys Scan"),
-                         ("Generic Findings Import", "Generic Findings Import"))
-    test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
     release_endpoint = forms.ModelChoiceField(queryset=Endpoint.objects.all())
-    environment = forms.ModelChoiceField(queryset=Development_Environment.objects.all().order_by('name'))
+    test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
     minimum_severity = forms.ChoiceField(help_text='Minimum severity level to be imported',
                                          required=True,
                                          choices=SEVERITY_CHOICES[0:4])
     active = forms.BooleanField(help_text="Select if these findings are currently active.", required=False)
     verified = forms.BooleanField(help_text="Select if these findings have been verified.", required=False)
-    scan_type = forms.ChoiceField(required=True, choices=SCAN_TYPE_CHOICES)
 
     tags = forms.CharField(widget=forms.SelectMultiple(choices=[]),
                            required=False,
@@ -545,9 +534,6 @@ class TestForm(forms.ModelForm):
     test_type = forms.ModelChoiceField(queryset=Test_Type.objects.all().order_by('name'))
     release_endpoint = forms.ModelChoiceField(queryset=Endpoint.objects.all())
     test_tool = forms.ModelChoiceField(queryset=Tool_Configuration.objects.all().order_by('name'),required=False)
-    environment = forms.ModelChoiceField(
-        queryset=Development_Environment.objects.all().order_by('name'))
-    # credential = forms.ModelChoiceField(Cred_User.objects.all(), required=False)
     tags = forms.CharField(widget=forms.SelectMultiple(choices=[]),
                            required=False,
                            help_text="Add tags that help describe this test.  "
@@ -561,7 +547,7 @@ class TestForm(forms.ModelForm):
 
     class Meta:
         model = Test
-        fields = ['test_type', 'test_tool', 'release_endpoint', 'environment', 'tags']
+        fields = ['test_type', 'test_tool', 'release_endpoint', 'tags']
 
 
 class DeleteTestForm(forms.ModelForm):
@@ -572,7 +558,6 @@ class DeleteTestForm(forms.ModelForm):
         model = Test
         exclude = ('test_type',
                    'test_tool',
-                   'environment',
                    'target_start',
                    'target_end',
                    'engagement',
@@ -1160,7 +1145,6 @@ class JIRAForm(forms.ModelForm):
 
 
 class ToolConfigForm(forms.ModelForm):
-    result_type = forms.ChoiceField(required=True, choices=ImportScanForm.SCAN_TYPE_CHOICES, label='Result Type')
     ssh = forms.CharField(widget=forms.Textarea(attrs={}), required=False, label='SSH Key')
 
     class Meta:

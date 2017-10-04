@@ -387,9 +387,8 @@ def import_scan_results(request, eid):
             min_sev = form.cleaned_data['minimum_severity']
             active = form.cleaned_data['active']
             verified = form.cleaned_data['verified']
-
-            scan_type = request.POST['scan_type']
-            if not any(scan_type in code for code in ImportScanForm.SCAN_TYPE_CHOICES):
+            result_format = request.POST['result_format']
+            if not any(result_format in code for code in ImportScanForm.SCAN_TYPE_CHOICES):
                 raise Http404()
 
             tt, t_created = Test_Type.objects.get_or_create(name=scan_type)
@@ -486,6 +485,9 @@ def import_scan_results(request, eid):
                                      messages.ERROR,
                                      'There appears to be an error in the XML report, please check and try again.',
                                      extra_tags='alert-danger')
+
+    else:
+        form.fields['release_endpoint'].queryset = Endpoint.objects.filter(product=engagement.product).order_by('name')
 
     add_breadcrumb(parent=engagement, title="Import Scan Results", top_level=False, request=request)
     return render(request,

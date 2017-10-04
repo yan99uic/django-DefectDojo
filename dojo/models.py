@@ -178,7 +178,8 @@ class Report_Type(models.Model):
 
 
 class Test_Type(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=100)
+    result_description = models.CharField(max_length=1000)
 
     def __unicode__(self):
         return self.name
@@ -342,7 +343,6 @@ class IPScan(models.Model):
 class Tool_Configuration(models.Model):
     name = models.CharField(max_length=200, null=False)
     description = models.CharField(max_length=2000, null=True, blank=True)
-    result_type = models.CharField(max_length=200, null=False, default='ZAP Scan')
     url =  models.URLField(max_length=2000, null=True)
     authentication_type = models.CharField(max_length=15,
                             choices=(
@@ -501,7 +501,7 @@ class Test(models.Model):
     notes = models.ManyToManyField(Notes, blank=True,
                                    editable=False)
     environment = models.ForeignKey(Development_Environment, null=True,
-                                    blank=False)
+                                    blank=False,editable=False)
 
     def __unicode__(self):
         return "%s (%s)" % (self.test_type,

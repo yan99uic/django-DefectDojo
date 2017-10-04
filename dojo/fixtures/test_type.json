@@ -1,86 +1,130 @@
 [
   {
     "fields": {
-      "name": "API Test"
+      "name": "General Purpose Test",
+      "result_description": "Generic findings in CSV format"
     },
     "model": "dojo.test_type",
     "pk": 1
   },
   {
     "fields": {
-      "name": "Static Check"
+      "name": "ZAP Scan",
+      "result_description": "ZAP XML report format"
     },
     "model": "dojo.test_type",
     "pk": 2
   },
   {
     "fields": {
-      "name": "Pen Test"
+      "name": "Burp Scan",
+      "result_description": "Burp XML report (with option to Base64 encode both the request and response fields)"
     },
     "model": "dojo.test_type",
     "pk": 3
   },
   {
     "fields": {
-      "name": "Nessus Scan"
+      "name": "Nessus Scan",
+      "result_description": "Nessus reports can be imported in the CSV, and .nessus (XML) report formats"
     },
     "model": "dojo.test_type",
     "pk": 4
   },
   {
     "fields": {
-      "name": "Web Application Test"
+      "name": "Nmap Scan",
+      "result_description": "XML output (use -oX)"
     },
     "model": "dojo.test_type",
     "pk": 5
   },
   {
     "fields": {
-      "name": "Security Research"
+      "name": "Nexpose Scan",
+      "result_description": "Use the full XML 2.0 export template from Rapid7 Nexpose"
     },
     "model": "dojo.test_type",
     "pk": 6
   },
   {
     "fields": {
-      "name": "Threat Modeling"
+      "name": "AppSpider Scan",
+      "result_description": "Use the VulnerabilitiesSummary.xml file found in the zipped Rapid7 AppSpider report download"
     },
     "model": "dojo.test_type",
     "pk": 7
   },
   {
     "fields": {
-      "name": "Veracode Scan"
+      "name": "Veracode Scan",
+      "result_description": "Veracode Detailed XML Report"
     },
     "model": "dojo.test_type",
     "pk": 8
   },
   {
     "fields": {
-      "name": "Burp Scan"
+      "name": "Checkmarx Scan",
+      "result_description": "Checkmarx Detailed XML Report"
     },
     "model": "dojo.test_type",
     "pk": 9
   },
   {
     "fields": {
-      "name": "Nexpose Scan"
+      "name": "Arachni Scan",
+      "result_description": "Arachni Scanner JSON report format"
     },
     "model": "dojo.test_type",
     "pk": 10
   },
   {
     "fields": {
-      "name": "ZAP Scan"
+      "name": "VCG Scan",
+      "result_description": "Visual Code Grepper (VCG) output can be imported in CSV or Xml formats"
     },
     "model": "dojo.test_type",
     "pk": 11
   },
   {
     "fields": {
-      "name": "Checkmarx"
+      "name": "Dependency Check Scan",
+      "result_description": "OWASP Dependency Check output can be imported in Xml format"
     },
     "model": "dojo.test_type",
     "pk": 12
+  },
+  {
+    "fields": {
+      "name": "Retire.js Scan",
+      "result_description": "Retire.js JavaScript scan (--js) output file can be imported in JSON format"
+    },
+    "model": "dojo.test_type",
+    "pk": 13
+  },
+  {
+    "fields": {
+      "name": "Node Security Platform Scan",
+      "result_description": "Node Security Platform (NSP) output file can be imported in JSON format"
+    },
+    "model": "dojo.test_type",
+    "pk": 14
+  },
+  {
+    "fields": {
+      "name": "Qualys Scan",
+      "result_description": "Qualys output files can be imported in XML format"
+    },
+    "model": "dojo.test_type",
+    "pk": 15
+  },
+  {
+    "fields": {
+      "name": "OpenVAS CSV",
+      "result_description": "Import OpenVAS Scan in CSV format. Export as CSV Results on OpenVAS"
+    },
+    "model": "dojo.test_type",
+    "pk": 16
   }
 ]
