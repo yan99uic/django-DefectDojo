@@ -440,6 +440,7 @@ def new_eng_for_app(request, pid):
         if form.is_valid():
             new_eng = form.save(commit=False)
             new_eng.product = prod
+            new_eng.lead = request.user
             if new_eng.threat_model:
                 new_eng.progress = 'threat_model'
             else:
