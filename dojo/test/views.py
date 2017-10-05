@@ -224,6 +224,7 @@ def add_findings(request, tid):
             new_finding = form.save(commit=False)
             new_finding.test = test
             new_finding.reporter = request.user
+            new_finding.endpoint = test.release_endpoint 
             new_finding.numerical_severity = Finding.get_numerical_severity(
                 new_finding.severity)
             if new_finding.false_p or new_finding.active is False:
@@ -232,8 +233,6 @@ def add_findings(request, tid):
             create_template = new_finding.is_template
             # always false now since this will be deprecated soon in favor of new Finding_Template model
             new_finding.is_template = False
-            new_finding.save()
-            new_finding.endpoints = form.cleaned_data['endpoints']
             new_finding.save()
             if 'jiraform-push_to_jira' in request.POST:
                 jform = JIRAFindingForm(request.POST, prefix='jiraform', enabled=enabled)

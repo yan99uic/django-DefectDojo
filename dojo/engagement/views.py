@@ -14,8 +14,9 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect, StreamingHttpResponse, Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.cache import cache_page
-from pytz import timezone
+from pytz import timezone, utc
 import json
+import time
 from django.forms.models import model_to_dict
 
 from dojo.filters import EngagementFilter
@@ -40,7 +41,6 @@ logging.basicConfig(
     filename=settings.DOJO_ROOT + '/../django_app.log',
 )
 logger = logging.getLogger(__name__)
-
 
 @user_passes_test(lambda u: u.is_staff)
 @cache_page(60 * 5)  # cache for 5 minutes
@@ -389,7 +389,7 @@ def import_scan_results(request, eid):
             tt = form.cleaned_data['test_type']
             scan_date = form.cleaned_data['scan_date']
             if not scan_date:
-                scan_date = datetime.now(tz=localtz)
+                scan_date = datetime.now(tz=utc)
             t = Test(engagement=engagement, test_type=tt, target_start=scan_date,
                      target_end=scan_date, percent_complete=100)
             t.lead = request.user
@@ -449,8 +449,11 @@ def import_scan_results(request, eid):
                     finding_count += 1
                 
                 if parser.generated:
-                    t.target_start = parser.generated.replace(tzinfo=localtz)
+                    print parser.generated
+                    print localtz
+                    t.target_start = parser.generated.replace(tzinfo=localtz).astimezone(utc)
                     t.target_end = t.target_start
+                    print t.target_start
                     t.save()
 
                 messages.add_message(request,

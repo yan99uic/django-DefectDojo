@@ -15,7 +15,7 @@ from defusedxml import ElementTree as ET
 
 from dojo.models import Finding, Endpoint
 
-LEVEL_MAP = {'1':'Low', '2':'Medium', '3':'High'}
+LEVEL_MAP = {'1':'Low', '2':'Medium', '3':'High', '4':'Critical'}
 
 class ZapXmlParser(object):
     """

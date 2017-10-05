@@ -1,6 +1,7 @@
 import base64
 import os
 import re
+import time
 from datetime import datetime
 from uuid import uuid4
 
@@ -20,6 +21,10 @@ from imagekit.processors import ResizeToCover
 from pytz import timezone, all_timezones
 from tagging.registry import register as tag_register
 from multiselectfield import MultiSelectField
+
+def localTzName():
+    offsetHour = time.timezone / 3600
+    return 'Etc/GMT%+d' % offsetHour
 
 class System_Settings(models.Model):
     enable_deduplication = models.BooleanField(default=False, 
@@ -49,9 +54,7 @@ class System_Settings(models.Model):
     false_positive_history = models.BooleanField(default=False)
     url_prefix = models.CharField(max_length=300, default='', blank=True)
     team_name = models.CharField(max_length=100, default='', blank=True)
-    time_zone = models.CharField(max_length=50,
-                                 choices=[(tz,tz) for tz in all_timezones],
-                                 default='UTC',blank=False)
+    time_zone = models.CharField(max_length=50, default=localTzName(), editable=False)
 
 try:
     localtz = timezone(System_Settings.objects.get().time_zone)
