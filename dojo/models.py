@@ -115,7 +115,7 @@ class Contact(models.Model):
 
 
 class Product_Type(models.Model):
-    name = models.CharField(max_length=300)
+    name = models.CharField(max_length=300, unique=True)
     critical_product = models.BooleanField(default=False)
     key_product = models.BooleanField(default=False)
 
@@ -169,7 +169,7 @@ class Product_Type(models.Model):
 
 
 class Product_Line(models.Model):
-    name = models.CharField(max_length=300)
+    name = models.CharField(max_length=300, unique=True)
     description = models.CharField(max_length=2000)
 
     def __unicode__(self):
@@ -194,7 +194,7 @@ class Test_Type(models.Model):
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     description = models.CharField(max_length=2000, null=True, blank=True)
     product_manager = models.ForeignKey(Dojo_User, null=True, blank=True, related_name='product_manager')
     technical_contact = models.ForeignKey(Dojo_User, null=True, blank=True, related_name='technical_contact')
@@ -429,7 +429,7 @@ class CWE(models.Model):
 
 
 class Endpoint(models.Model):
-    name = models.CharField(max_length=250, unique=True, null=False, blank=False)
+    name = models.CharField(max_length=250)
     product = models.ForeignKey(Product)
 
     class Meta:

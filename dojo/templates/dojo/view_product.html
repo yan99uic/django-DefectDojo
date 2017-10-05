@@ -422,6 +422,33 @@
                 </div>
             </div>
         </div>
+    </div>
+    {% if user.is_staff and endpoints %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Release Endpoints</h4>
+                </div>
+                <table class="tablesorter-bootstrap table table-condensed table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for e in endpoints %}
+                    <tr>
+                        <td><a href="{% url 'view_endpoint' e.id %}">{{ e.name }}</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %} 
+    <div class="row">
         {% if user.is_staff %}
             <div class="col-md-12">
                 <div class="panel panel-default table-responsive">

@@ -852,15 +852,15 @@ class AddEndpointForm(forms.Form):
         cleaned_data = super(AddEndpointForm, self).clean()
 
         if 'endpoint' in cleaned_data and 'product' in cleaned_data:
-            endpoint = cleaned_data['endpoint']
-            if Endpoint.objects.filter(name = endpoint).count() > 0:
-                raise forms.ValidationError('This release endpoint name is already defined')
-            self.endpoint = endpoint
             product = cleaned_data['product']
             if isinstance(product, Product):
                 self.product = product
             else:
                 self.product = Product.objects.get(id=int(product))
+            endpoint = cleaned_data['endpoint']
+            if Endpoint.objects.filter(name=endpoint, product=product).count() > 0:
+                raise forms.ValidationError('This release endpoint name is already defined for product '+product.name)
+            self.endpoint = endpoint
         else:
             raise forms.ValidationError('Please enter a valid release endpoint name.',
                                         code='invalid')

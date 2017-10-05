@@ -33,6 +33,7 @@
                             <th class="nowrap">Jira</th>
                             {% endif %}
                             <th class="nowrap">{% dojo_sort request 'Product' 'test__engagement__product__name'%}</th>
+                            <th class="nowrap">{% dojo_sort request 'Endpoint' 'name'%}</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -60,6 +61,10 @@
                                 <td><a
                                         href="{% url 'view_product' finding.test.engagement.product.id %}"
                                         title="{{ finding.test.engagement.product }}">{{ finding.test.engagement.product }}</a>
+                                </td>
+                                <td><a
+                                        href="{% url 'view_endpoint' finding.endpoint.id %}"
+                                        title="{{ finding.endpoint.name }}">{{ finding.endpoint.name }}</a>
                                 </td>
                             </tr>
                         {% endfor %}
