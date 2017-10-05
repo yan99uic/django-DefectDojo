@@ -26,7 +26,7 @@ from dojo.models import Finding, Test, Test_Type, Notes, \
 from dojo.tools.factory import import_parser_factory
 from dojo.utils import get_page_items, add_breadcrumb, get_cal_event, message, \
                        process_notifications, get_system_setting, create_notification
-from dojo.tasks import add_issue_task
+from dojo.tasks import add_issue_task, async_schedule_test
 
 localtz = timezone(get_system_setting('time_zone'))
 
@@ -71,6 +71,7 @@ def view_test(request, tid):
     fpage = get_page_items(request, findings, 25)
     sfpage = get_page_items(request, stub_findings, 25)
     show_re_upload = findings.count() > 0
+    show_re_scan = test.percent_complete == 100 and test.test_tool is not None 
 
     add_breadcrumb(parent=test, top_level=False, request=request)
     return render(request, 'dojo/view_test.html',
@@ -82,6 +83,7 @@ def view_test(request, tid):
                    'person': person,
                    'request': request,
                    'show_re_upload': show_re_upload,
+                   'show_re_scan': show_re_scan,
                    'creds': creds,
                    'cred_test': cred_test
                    })
@@ -615,3 +617,9 @@ def re_import_scan_results(request, tid):
                    'additional_message': additional_message,
                    'scan_types': Test_Type.objects.all(),
                    })
+
+@user_passes_test(lambda u: u.is_staff)
+def re_scan(request, tid):
+    async_schedule_test.delay(tid)
+    return HttpResponseRedirect(reverse('view_test', args=(tid,)))
+    

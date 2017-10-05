@@ -267,7 +267,7 @@ def async_schedule_test(test_id, *args, **kwargs):
     test = Test.objects.get(id=test_id)
     if test.test_tool is None:
         return
-    if test.test_tool.result_type == 'ZAP Scan':
+    if test.test_type.name == 'ZAP Scan':
         sites = []
         for t in test.tags:
             sites.append(t.name)

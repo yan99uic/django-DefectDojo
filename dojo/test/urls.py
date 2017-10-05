@@ -23,4 +23,5 @@ urlpatterns = [
         views.delete_test_note, name='delete_test_note'),
     url(r'^test/(?P<tid>\d+)/search$', views.search, name='search'),
     url(r'^test/(?P<tid>\d+)/re_import_scan_results', views.re_import_scan_results, name='re_import_scan_results'),
+    url(r'^test/(?P<tid>\d+)/re_scan', views.re_scan, name='re_scan'),
 ]

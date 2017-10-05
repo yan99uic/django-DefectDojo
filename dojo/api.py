@@ -463,6 +463,8 @@ class TestResource(BaseModelResource):
 
     def dehydrate(self, bundle):
         bundle.data['test_type'] = bundle.obj.test_type
+        bundle.data['target_start'] = bundle.obj.target_start
+        bundle.data['target_end'] = bundle.obj.target_end
         return bundle
 
 
