@@ -449,11 +449,8 @@ def import_scan_results(request, eid):
                     finding_count += 1
                 
                 if parser.generated:
-                    print parser.generated
-                    print localtz
                     t.target_start = parser.generated.replace(tzinfo=localtz).astimezone(utc)
                     t.target_end = t.target_start
-                    print t.target_start
                     t.save()
 
                 messages.add_message(request,
