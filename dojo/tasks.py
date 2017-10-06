@@ -267,6 +267,7 @@ def async_false_history(new_finding, *args, **kwargs):
 
 def mark_start_test(test):
     test.target_start = datetime.now(tz=utc)
+    test.target_end = None
     test.status = "Scheduled"
     test.percent_complete = 1
     test.save()

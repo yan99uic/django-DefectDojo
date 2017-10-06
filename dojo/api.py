@@ -440,12 +440,13 @@ class TestResource(BaseModelResource):
         resource_name = 'tests'
         list_allowed_methods = ['get', 'post']
         # disabled delete. Should not be allowed without fine authorization.
-        detail_allowed_methods = ['get', 'post', 'put']
+        detail_allowed_methods = ['get', 'post', 'put', 'patch']
         queryset = Test.objects.all().order_by('target_end')
         include_resource_uri = True
         filtering = {
             'id': ALL,
             'test_type': ALL,
+            'target_start': ALL,
             'target_end': ALL,
             'status': ALL,
             'notes': ALL,
@@ -461,11 +462,10 @@ class TestResource(BaseModelResource):
             return ModelFormValidation(form_class=TestForm, resource=TestResource)
 
     def dehydrate(self, bundle):
-        bundle.data['test_type'] = bundle.obj.test_type
+        #bundle.data['test_type'] = bundle.obj.test_type
         return bundle
 
     def hydrate(self, bundle):
-        bundle.obj.target_end = bundle.data['target_end'] if 'target_end' in bundle.data else datetime.now(tz=localtz)
         return bundle
 
 

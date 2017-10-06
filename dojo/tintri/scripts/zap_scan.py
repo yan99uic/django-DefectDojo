@@ -9,18 +9,19 @@ import ssl
 import json
 import requests
 import urlparse
+from datetime import datetime
 
 ZPXY = {'http':'http://localhost:8080', 'https':'http://localhost:8080'}
 zproxy = None
 headers = {'content-type': 'application/json', 'Authorization': 'ApiKey ubuntu:1c91563fe3c7b0d29892e80931016bf600054d4c'}
 
 def report(progress, status):
+    rpt = {'percent_complete':progress,'status':status}
+    if progress >= 100:
+        rpt['target_end'] = datetime.now().isoformat()
     try:
-        requests.put('http://'+sys.argv[2]+':8000/api/v1/tests/'+sys.argv[3]+'/', 
-             headers=headers, verify=True, data=json.dumps({
-                'percent_complete':progress,
-                'status':status 
-             }))
+        requests.patch('http://'+sys.argv[2]+':8000/api/v1/tests/'+sys.argv[3]+'/', 
+             headers=headers, verify=True, data=json.dumps(rpt))
     except: pass
 
 def quit(ret, status):
