@@ -1078,7 +1078,7 @@ class ReImportScanResource(MultipartResource, Resource):
             # simply discard old findings associate, since we do re-import
             Finding.objects.filter(test=test).delete()
             # compare with existing findings to auto-mark 'mitigated', 're-opened', etc 
-            original_items = set(f.id for f in Finding.objects.filter(test_type=test.test_type,
+            original_items = set(f for f in Finding.objects.filter(test_type=test.test_type,
                              endpoint=test.release_endpoint).values_list("id", flat=True))
             reviewed_items = []
             for item in items:
