@@ -536,13 +536,14 @@ class Finding(models.Model):
     description = models.TextField()
     mitigation = models.TextField()
     impact = models.TextField()
-    endpoint = models.ForeignKey(Endpoint, editable=False)
     unsaved_endpoints = []
     unsaved_request = None
     unsaved_response = None
     unsaved_tags = None
     references = models.TextField(null=True, blank=True, db_column="refs")
+    endpoint = models.ForeignKey(Endpoint, editable=False)
     test = models.ForeignKey(Test, editable=False)
+    test_type = models.ForeignKey(Test_Type, editable=False)
     # TODO: Will be deprecated soon
     is_template = models.BooleanField(default=False)
     active = models.BooleanField(default=True)

@@ -1,6 +1,6 @@
 # see tastypie documentation at http://django-tastypie.readthedocs.org/en
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import resolve, get_script_prefix
+from django.core.urlresolvers import resolve, get_script_prefix, Resolver404
 from tastypie import fields
 from tastypie.fields import RelatedField
 from tastypie.authentication import ApiKeyAuthentication
@@ -13,8 +13,9 @@ from tastypie.resources import ModelResource, Resource
 from tastypie.serializers import Serializer
 from tastypie.validation import FormValidation, Validation
 from django.core.exceptions import ObjectDoesNotExist
-from pytz import timezone
+from pytz import timezone, utc
 from django.conf import settings
+import itertools
 
 from dojo.models import Product, Engagement, Test, Finding, \
     User, ScanSettings, IPScan, Scan, Stub_Finding, Risk_Acceptance, \
@@ -984,17 +985,11 @@ class ReImportScanValidation(Validation):
         if 'test' not in bundle.data:
             errors.setdefault('test', []).append('test must be given')
         else:
-            # verify the engagement is valid
+            # verify the test is valid
             try:
                 get_pk_from_uri(uri=bundle.data['test'])
             except NotFound:
-                errors.setdefault('engagement', []).append('A valid engagement must be supplied. Ex. /api/v1/engagements/1/')
-        scan_type_list = list(map(lambda x: x[0], ImportScanForm.SCAN_TYPE_CHOICES))
-        if 'scan_type' in bundle.data:
-            if bundle.data['scan_type'] not in scan_type_list:
-                errors.setdefault('scan_type', []).append('scan_type must be one of the following: ' + ', '.join(scan_type_list))
-        else:
-            errors.setdefault('scan_type', []).append('A scan_type must be given so we know how to import the scan file.')
+                errors.setdefault('test', []).append('A valid test id must be supplied. Ex. /api/v1/reimportscan/1/')
         severity_list = list(map(lambda x: x[0], SEVERITY_CHOICES))
         if 'minimum_severity' in bundle.data:
             if bundle.data['minimum_severity'] not in severity_list:
@@ -1017,7 +1012,6 @@ class ReImportScanValidation(Validation):
 
             if not isinstance(bundle.data['verified'], bool):
                 errors.setdefault('verified', []).append('verified must be a boolean')
-
         return errors
 
 class ReImportScanResource(MultipartResource, Resource):
@@ -1025,14 +1019,13 @@ class ReImportScanResource(MultipartResource, Resource):
     minimum_severity = fields.CharField(attribute='minimum_severity')
     active = fields.BooleanField(attribute='active')
     verified = fields.BooleanField(attribute='verified')
-    scan_type = fields.CharField(attribute='scan_type')
     tags = fields.CharField(attribute='tags')
     file = fields.FileField(attribute='file')
     test = fields.CharField(attribute='test')
 
     class Meta:
         resource_name = 'reimportscan'
-        fields = ['scan_date', 'minimum_severity', 'active', 'verified', 'scan_type', 'tags', 'file']
+        fields = ['scan_date', 'minimum_severity', 'active', 'verified', 'tags', 'file']
         list_allowed_methods = ['post']
         detail_allowed_methods = []
         include_resource_uri = True
@@ -1071,12 +1064,10 @@ class ReImportScanResource(MultipartResource, Resource):
         bundle = self.full_hydrate(bundle)
 
         test = bundle.obj.__getattr__('test_obj')
-        scan_type = bundle.obj.__getattr__('scan_type')
         min_sev = bundle.obj.__getattr__('minimum_severity')
-        scan_date = bundle.obj.__getattr__('scan_date')
         verified = bundle.obj.__getattr__('verified')
         active = bundle.obj.__getattr__('active')
-
+        
         try:
             parser = import_parser_factory(bundle.data['file'], test)
         except ValueError:
@@ -1084,51 +1075,39 @@ class ReImportScanResource(MultipartResource, Resource):
 
         try:
             items = parser.items
-            original_items = test.finding_set.all().values_list("id", flat=True)
-            new_items = []
-            mitigated_count = 0
-            finding_count = 0
-            finding_added_count = 0
-            reactivated_count = 0
+            # simply discard old findings associate, since we do re-import
+            Finding.objects.filter(test=test).delete()
+            # compare with existing findings to auto-mark 'mitigated', 're-opened', etc 
+            original_items = set(f.id for f in Finding.objects.filter(test_type=test.test_type,
+                             endpoint=test.release_endpoint).values_list("id", flat=True))
+            reviewed_items = []
             for item in items:
                 sev = item.severity
-                if sev == 'Information' or sev == 'Informational':
+                if sev.startswith('Info'):
                     sev = 'Info'
-
                 if Finding.SEVERITIES[sev] > Finding.SEVERITIES[min_sev]:
                     continue
-
-                if scan_type == 'Veracode Scan' or scan_type == 'Arachni Scan':
-                    find = Finding.objects.filter(title=item.title,
-                                                  test__id=test.id,
-                                                  severity=sev,
-                                                  numerical_severity=Finding.get_numerical_severity(sev),
-                                                  description=item.description
-                                                  )
-                else:
-                    find = Finding.objects.filter(title=item.title,
-                                                  test__id=test.id,
-                                                  severity=sev,
-                                                  numerical_severity=Finding.get_numerical_severity(sev),
-                                                  )
-
-                if len(find) == 1:
-                    find = find[0]
-                    if find.mitigated:
-                        # it was once fixed, but now back
-                        find.mitigated = None
-                        find.mitigated_by = None
-                        find.active = True
-                        find.verified = verified
-                        find.save()
-                        note = Notes(entry="Re-activated by %s re-upload." % scan_type,
+                found = Finding.objects.filter(test_type = test.test_type,
+                                               endpoint = test.release_endpoint,
+                                               title = item.title) 
+                if found:
+                    for f in found:
+                        if f.mitigated:
+                            # it was once fixed, but now back
+                            f.mitigated = None
+                            f.mitigated_by = None
+                            f.active = True
+                            f.verified = verified
+                            f.save()
+                            note = Notes(entry="Re-activated by auto-upload scan result.",
                                      author=bundle.request.user)
-                        note.save()
-                        find.notes.add(note)
-                        reactivated_count += 1
-                    new_items.append(find.id)
+                            note.save()
+                            f.notes.add(note)
+                    reviewed_items.append(f.id)
                 else:
                     item.test = test
+                    item.test_type = test.test_type
+                    item.endpoint = test.release_endpoint
                     item.date = test.target_start
                     item.reporter = bundle.request.user
                     item.last_reviewed = datetime.now(tz=localtz)
@@ -1136,52 +1115,19 @@ class ReImportScanResource(MultipartResource, Resource):
                     item.verified = verified
                     item.active = active
                     item.save()
-                    finding_added_count += 1
-                    new_items.append(item.id)
-                    find = item
 
-                    if hasattr(item, 'unsaved_req_resp') and len(item.unsaved_req_resp) > 0:
-                        for req_resp in item.unsaved_req_resp:
-                            burp_rr = BurpRawRequestResponse(finding=find,
-                                                             burpRequestBase64=req_resp["req"],
-                                                             burpResponseBase64=req_resp["resp"],
-                                                             )
-                            burp_rr.clean()
-                            burp_rr.save()
-
-                    if item.unsaved_request is not None and item.unsaved_response is not None:
-                        burp_rr = BurpRawRequestResponse(finding=find,
-                                                         burpRequestBase64=item.unsaved_request,
-                                                         burpResponseBase64=item.unsaved_response,
-                                                         )
-                        burp_rr.clean()
-                        burp_rr.save()
-                if find:
-                    finding_count += 1
-                    for endpoint in item.unsaved_endpoints:
-                        ep, created = Endpoint.objects.get_or_create(protocol=endpoint.protocol,
-                                                                     host=endpoint.host,
-                                                                     path=endpoint.path,
-                                                                     query=endpoint.query,
-                                                                     fragment=endpoint.fragment,
-                                                                     product=test.engagement.product)
-                        find.endpoints.add(ep)
-
-                    if item.unsaved_tags is not None:
-                        find.tags = item.unsaved_tags
             # calculate the difference
-            to_mitigate = set(original_items) - set(new_items)
+            to_mitigate = set(original_items) - set(reviewed_items)
             for finding_id in to_mitigate:
                 finding = Finding.objects.get(id=finding_id)
-                finding.mitigated = datetime.combine(scan_date, datetime.now(tz=localtz).time())
+                finding.mitigated = datetime.now(tz=utc)
                 finding.mitigated_by = bundle.request.user
                 finding.active = False
                 finding.save()
-                note = Notes(entry="Mitigated by %s re-upload." % scan_type,
+                note = Notes(entry="Mitigated by auto-upload scan result.",
                              author=bundle.request.user)
                 note.save()
                 finding.notes.add(note)
-                mitigated_count += 1
 
         except SyntaxError:
             raise NotFound("Parser SyntaxError")

@@ -13,7 +13,6 @@ from datetime import datetime
 
 ZPXY = {'http':'http://localhost:8080', 'https':'http://localhost:8080'}
 zproxy = None
-headers = {'content-type': 'application/json', 'Authorization': 'ApiKey ubuntu:1c91563fe3c7b0d29892e80931016bf600054d4c'}
 
 def report(progress, status):
     rpt = {'percent_complete':progress,'status':status}
@@ -21,7 +20,17 @@ def report(progress, status):
         rpt['target_end'] = datetime.now().isoformat()
     try:
         requests.patch('http://'+sys.argv[2]+':8000/api/v1/tests/'+sys.argv[3]+'/', 
-             headers=headers, verify=True, data=json.dumps(rpt))
+             headers={'content-type': 'application/json', 'Authorization': 'ApiKey ubuntu:1c91563fe3c7b0d29892e80931016bf600054d4c'}, 
+             data=json.dumps(rpt))
+    except: pass
+
+def report_result(rptf):
+    rpt = {'file':('alerts.xml', open(rptf,'rb'))}
+    try:
+        requests.post('http://'+sys.argv[2]+':8000/api/v1/reimportscan/', 
+                     data={'test':'/api/v1/tests/'+sys.argv[3]+'/'}, 
+                     headers={'Authorization': 'ApiKey ubuntu:1c91563fe3c7b0d29892e80931016bf600054d4c'}, 
+                     files=rpt)
     except: pass
 
 def quit(ret, status):
@@ -96,11 +105,12 @@ try:
     
     notify("Active Scan FINISHED")
     # save JSON scan result into file
-    alertsf = os.path.join(work_dir, 'alerts.json')
+    alertsf = os.path.join(work_dir, 'alerts.xml')
     with open(alertsf, 'w') as f:
-        json.dump(zap.core.alerts(), f)
+        f.write(zap.core.xmlreport())
         f.close()
     notify("Scan result is saved to " + alertsf)
+    report_result(alertsf)
 except Exception as err:
     quit(-1, str(err))
 
