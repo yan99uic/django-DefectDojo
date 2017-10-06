@@ -11,10 +11,24 @@ import requests
 import urlparse
 
 ZPXY = {'http':'http://localhost:8080', 'https':'http://localhost:8080'}
+zproxy = None
+headers = {'content-type': 'application/json', 'Authorization': 'ApiKey ubuntu:1c91563fe3c7b0d29892e80931016bf600054d4c'}
 
-def fail(err):
-    print err
-    sys.exit(-1)
+def report(progress, status):
+    try:
+        requests.put('http://'+sys.argv[2]+':8000/api/v1/tests/'+sys.argv[3]+'/', 
+             headers=headers, verify=True, data=json.dumps({
+                'percent_complete':progress,
+                'status':status 
+             }))
+    except: pass
+
+def quit(ret, status):
+    report(100, status)
+    if zproxy:
+        time.sleep(3)
+        zproxy.terminate()
+    sys.exit(ret)
 
 def notify(msg):
     print msg
@@ -27,35 +41,30 @@ def login_site(url):
                 "password":"tintri99",
                 "roles":None,
                 "typeId":"com.tintri.api.rest.vcommon.dto.rbac.RestApiCredentials"}  
-     requests.post('https://ttvm122.tintri.com/api/v310/flex/session/login/action=create', 
+    requests.post('https://ttvm122.tintri.com/api/v310/flex/session/login/action=create', 
                    proxies=ZPXY,
                    data=json.dumps(login_data), 
                    verify=False, 
                    headers={'Content-type': 'application/json'})
 
-
 # Test input zap-scan <URL|HOST>
-if len(sys.argv) < 2:
-    fail('Usage: zap-scan URLs/hosts')
 
 # Quick test remote URL
-targets = []
-for t in sys.argv[1].split(','):
-    th = u.strip()
-    if not th:
-        continue
-    ue = urlparse.urlparse(th)
-    if ue.netloc:
-        th = ue.netloc
-    try:
-        if urllib2.urlopen(urllib2.Request('https://'+th), context=ssl._create_unverified_context()) is not None:
-            targets.append(th)
-    except:
-        print 'instance not available: ', t
+target = sys.argv[1].strip()
+if not target:
+    quit(-1, 'Invalid target')
 
-if not targets:
-    fail('none of the target is accessible')
+ue = urlparse.urlparse(target)
+if ue.netloc:
+    target = ue.netloc
+target = "https://" + target
 
+try:
+    if urllib2.urlopen(urllib2.Request(target), context=ssl._create_unverified_context()) is None:
+        quit(-1, 'Target unreachable')
+except:
+    quit(-1, 'Target unreachable')
+    
 work_dir = os.getcwd()
 
 # Start ZAP proxy
@@ -65,20 +74,24 @@ os.chdir('C:\\Program Files (x86)\\OWASP\\Zed Attack Proxy')
 zproxy=Popen(['java','-jar','zap-2.6.0.jar'], stdout=open('/dev/null','w'))
 for n in xrange(3):
     if zproxy.poll() is not None:
-        print "ZAP Proxy failed to start"
-        sys.exit(-1)
+        quit(-1, 'ZAP proxy failed to start')
     time.sleep(5)
+
 notify("ZAP proxy STARTED")
 ret = 0
 try:
     notify("Starting Active Scan ...")
     zap = ZAPv2(apikey='tintri99')
-    for target in targets:
-        zap.urlopen(target)
-        time.sleep(3)
-        scanid = zap.ascan.scan(target)
-        while (int(zap.ascan.status(scanid)) < 100):
-            time.sleep(5)
+
+    zap.urlopen(target)
+    time.sleep(3)
+    
+    scanid = zap.ascan.scan(target)
+    progress = 0
+    while (progress < 100):
+        time.sleep(5)
+        progress = int(zap.ascan.status(scanid))
+        report(progress, "Scanning...") 
     
     notify("Active Scan FINISHED")
     # save JSON scan result into file
@@ -88,9 +101,6 @@ try:
         f.close()
     notify("Scan result is saved to " + alertsf)
 except Exception as err:
-    print err
-    ret = -1
+    quit(-1, str(err))
 
-time.sleep(3)
-zproxy.terminate()
-sys.exit(ret)
+quit(0, "Finished")

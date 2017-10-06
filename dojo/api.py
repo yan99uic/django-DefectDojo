@@ -428,7 +428,7 @@ class EngagementResource(BaseModelResource):
 
     POST, PUT [/id/]
     Expects *test_type, *engagement, *target_start, *target_end,
-    estimated_time, actual_time, percent_complete, notes
+    percent_complete, notes
 """
 
 
@@ -446,11 +446,10 @@ class TestResource(BaseModelResource):
         filtering = {
             'id': ALL,
             'test_type': ALL,
-            'target_start': ALL,
             'target_end': ALL,
+            'status': ALL,
             'notes': ALL,
             'percent_complete': ALL,
-            'actual_time': ALL,
             'engagement': ALL,
         }
         authentication = DojoApiKeyAuthentication()
@@ -463,8 +462,10 @@ class TestResource(BaseModelResource):
 
     def dehydrate(self, bundle):
         bundle.data['test_type'] = bundle.obj.test_type
-        bundle.data['target_start'] = bundle.obj.target_start
-        bundle.data['target_end'] = bundle.obj.target_end
+        return bundle
+
+    def hydrate(self, bundle):
+        bundle.obj.target_end = bundle.data['target_end'] if 'target_end' in bundle.data else datetime.now(tz=localtz)
         return bundle
 
 

@@ -5,8 +5,7 @@ import time
 import uuid
 import os
 
-def do_zap_scan(boturl, sites):
-    rptf = os.path.join("/tmp", str(uuid.uuid1()) + ".json")
+def do_zap_scan(boturl, target, defectdojo, tid):
     build = {"id":4,
       "jsonrpc":"2.0",
       "method":"force",
@@ -16,40 +15,37 @@ def do_zap_scan(boturl, sites):
                 "project":"",
                 "repository":"",
                 "revision":"",
-                "instance_urls":sites,
-                "report_file":rptf}}
+                "target":target,
+                "defectdojo":defectdojo,
+                "report_tid":str(tid)}}
     # request for buildbot build
+    done = False
     try:
         response = requests.post(boturl + '/api/v2/forceschedulers/forceScan',
            data=json.dumps(build), 
            headers={'Content-type': 'application/json'})
         bid = str(response.json()['result'][0])
     
-        # wait for build to finish
-        ret = True
-        while True:
+        # wait for a few to catch quick errors
+        for n in xrange(3):
             resp = requests.get(boturl + '/api/v2/builds/' + bid + '/steps').json()
-            done = True
             steps = resp['steps']
             if steps:
                 for s in steps:
                     if not s['complete']:
-                        done = False
                         break
                     if not 0 == s['results']:
-                        ret = False 
+                        ret = s['state_string'] 
+                        done = True
                         break
                 if done:
                     break
             time.sleep(5)
-        # return report file if scan finished successfully
-        return rptf if ret else None
+        if not done:
+            ret = "Bot job scheduled"
     except Exception as err:
-        print err
-        return None
-
-
-
-
-
-
+        done = True
+        ret = str(err)
+        if len(ret) > 70:
+            ret = ret[:70] + '..' 
+    return ret, done

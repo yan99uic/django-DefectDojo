@@ -14,10 +14,11 @@ from django.utils import timezone as tz
 from celery.utils.log import get_task_logger
 from celery.decorators import task
 from dojo.models import Finding, Test, Engagement
-from pytz import timezone
+from pytz import timezone, utc
 from django.forms.models import model_to_dict
 
 import pdfkit
+import socket
 from dojo.celery import app
 from dojo.reports.widgets import report_widget_factory
 from dojo.utils import add_comment, add_epic, add_issue, update_epic, update_issue, \
@@ -28,6 +29,18 @@ from dojo.tintri.zap.parser import parse_zap_result
 logger = get_task_logger(__name__)
 
 localtz = timezone(get_system_setting('time_zone'))
+
+def self_IP():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 @app.task(bind=True)
 def add_alerts(self, runinterval):
@@ -253,13 +266,9 @@ def async_false_history(new_finding, *args, **kwargs):
 
 
 def mark_start_test(test):
-    test.target_start = datetime.now(tz=localtz)
+    test.target_start = datetime.now(tz=utc)
+    test.status = "Scheduled"
     test.percent_complete = 1
-    test.save()
-
-def mark_end_test(test):
-    test.target_end = datetime.now(tz=localtz)
-    test.percent_complete = 100
     test.save()
 
 @app.task(name='async_schedule_test')
@@ -268,20 +277,14 @@ def async_schedule_test(test_id, *args, **kwargs):
     if test.test_tool is None:
         return
     if test.test_type.name == 'ZAP Scan':
-        sites = []
-        for t in test.tags:
-            sites.append(t.name)
-        if not sites:
-            print "warning: no sites is provided, no auto scan is triggered"
+        if not test.tags:
             return
+        target = test.tags[0].name
         mark_start_test(test)
-        items = parse_zap_result(do_zap_scan(test.test_tool.url, ','.join(sites)), test)
-        for item in items:
-            sev = item.severity
-            if sev == 'Information' or sev == 'Informational':
-                sev = 'Info'
-            item.severity = sev
-            item.date = test.target_start
-            item.reporter = test.lead
-            item.save()
-        mark_end_test(test)
+        status, done = do_zap_scan(test.test_tool.url, target, self_IP(), test_id)
+        test.status = status
+        print "do_zap_scan returned: ", status, done
+        if done:
+            test.target_end = datetime.now(tz=utc)
+            test.percent_complete = 100
+        test.save()

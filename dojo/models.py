@@ -496,10 +496,9 @@ class Test(models.Model):
     test_type = models.ForeignKey(Test_Type)
     release_endpoint = models.ForeignKey(Endpoint)
     test_tool = models.ForeignKey(Tool_Configuration, null=True, blank=True, related_name='tool_configuration')
+    status = models.CharField(max_length=100, editable=False, null=True, blank=True)
     target_start = models.DateTimeField(null=True, blank=True, editable=False)
     target_end = models.DateTimeField(null=True, blank=True, editable=False)
-    estimated_time = models.TimeField(null=True, blank=True, editable=False)
-    actual_time = models.TimeField(null=True, blank=True, editable=False)
     percent_complete = models.IntegerField(null=True, blank=True, editable=False)
     notes = models.ManyToManyField(Notes, blank=True,
                                    editable=False)

@@ -78,8 +78,9 @@
                     <th>Test Type</th>
                     <th>Endpoint</th>
                     <th>Test Tool</th>
-                    <th>Target Start Time</th>
-                    <th>Target End Time</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Status</th>
                     {% if test.percent_complete > 0 %}
                         <th>Progress</th>
                     {% endif %}
@@ -91,6 +92,7 @@
                     <td>{{ test.test_tool }}</td>
                     <td>{{ test.target_start }}</td>
                     <td>{{ test.target_end }}</td>
+                    <td>{{ test.status }}</td>
                     {% if test.percent_complete > 0 %}
                         <td>
                             <div class="progress">
