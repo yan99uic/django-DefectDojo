@@ -526,24 +526,27 @@ class VA(models.Model):
     status = models.BooleanField(default=False, editable=False)
     start = models.CharField(max_length=100)
 
+class Threat(models.Model):
+    title = models.TextField(max_length=1000)
+    description = models.TextField()
+    cweid = models.IntegerField(default=0, null=True, blank=True)
+    wascid = models.IntegerField(default=0, null=True, blank=True)
+    severity = models.CharField(max_length=200)
+    mitigation = models.TextField()
 
 class Finding(models.Model):
-    title = models.TextField(max_length=1000)
+    threat = models.ForeignKey(Threat, editable=False)
     date = models.DateField(default=get_current_date)
-    cwe = models.IntegerField(default=0, null=True, blank=True)
     url = models.TextField(null=True, blank=True, editable=False)
-    severity = models.CharField(max_length=200)
-    description = models.TextField()
-    mitigation = models.TextField()
+    references = models.TextField(null=True, blank=True, db_column="refs")
+    endpoint = models.ForeignKey(Endpoint, editable=False)
     impact = models.TextField()
+    test = models.ForeignKey(Test, editable=False)
+    test_type = models.ForeignKey(Test_Type, editable=False)
     unsaved_endpoints = []
     unsaved_request = None
     unsaved_response = None
     unsaved_tags = None
-    references = models.TextField(null=True, blank=True, db_column="refs")
-    endpoint = models.ForeignKey(Endpoint, editable=False)
-    test = models.ForeignKey(Test, editable=False)
-    test_type = models.ForeignKey(Test_Type, editable=False)
     # TODO: Will be deprecated soon
     is_template = models.BooleanField(default=False)
     active = models.BooleanField(default=True)

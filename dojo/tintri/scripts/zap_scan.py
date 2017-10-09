@@ -25,9 +25,9 @@ def report(progress, status):
     except: pass
 
 def report_result(rptf):
-    rpt = {'file':('alerts.xml', open(rptf,'rb'))}
+    rpt = {'file':('alerts.json', open(rptf,'rb'))}
     try:
-        requests.post('http://'+sys.argv[2]+':8000/api/v1/reimportscan/', 
+        requests.post('http://'+sys.argv[2]+':8000/api/v1/reportscanresult/', 
                      data={'test':'/api/v1/tests/'+sys.argv[3]+'/'}, 
                      headers={'Authorization': 'ApiKey ubuntu:1c91563fe3c7b0d29892e80931016bf600054d4c'}, 
                      files=rpt)
@@ -44,14 +44,14 @@ def notify(msg):
     print msg
     sys.stdout.flush()
 
-def login_site(url):
+def login_site(target):
     login_data={"newPassword":None,
                 "fullApiVersion":"v310.71",
                 "username":"admin",
                 "password":"tintri99",
                 "roles":None,
                 "typeId":"com.tintri.api.rest.vcommon.dto.rbac.RestApiCredentials"}  
-    requests.post('https://ttvm122.tintri.com/api/v310/flex/session/login/action=create', 
+    requests.post(target + '/api/v310/flex/session/login/action=create', 
                    proxies=ZPXY,
                    data=json.dumps(login_data), 
                    verify=False, 
@@ -94,6 +94,8 @@ try:
     zap = ZAPv2(apikey='tintri99')
 
     zap.urlopen(target)
+    #login_site(target)
+    #zap.urlopen(target)
     time.sleep(3)
     
     scanid = zap.ascan.scan(target)
@@ -104,10 +106,10 @@ try:
         report(progress, "Scanning...") 
     
     notify("Active Scan FINISHED")
-    # save JSON scan result into file
-    alertsf = os.path.join(work_dir, 'alerts.xml')
+    # save JSON scan result into file then upload to DefectDojo
+    alertsf = os.path.join(work_dir, 'alerts.json')
     with open(alertsf, 'w') as f:
-        f.write(zap.core.xmlreport())
+        json.dump(zap.core.alerts(target), f)
         f.close()
     notify("Scan result is saved to " + alertsf)
     report_result(alertsf)
